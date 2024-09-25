@@ -34,10 +34,10 @@ public:
 		float       bind_y;
 		float       bind_z;
 		uint8_t     select_rank;
-		std::string content_flags;
-		std::string content_flags_disabled;
 		float       min_expansion;
 		float       max_expansion;
+		std::string content_flags;
+		std::string content_flags_disabled;
 	};
 
 	static std::string PrimaryKey()
@@ -63,10 +63,10 @@ public:
 			"bind_y",
 			"bind_z",
 			"select_rank",
-			"content_flags",
-			"content_flags_disabled",
 			"min_expansion",
 			"max_expansion",
+			"content_flags",
+			"content_flags_disabled",
 		};
 	}
 
@@ -88,10 +88,10 @@ public:
 			"bind_y",
 			"bind_z",
 			"select_rank",
-			"content_flags",
-			"content_flags_disabled",
 			"min_expansion",
 			"max_expansion",
+			"content_flags",
+			"content_flags_disabled",
 		};
 	}
 
@@ -147,10 +147,10 @@ public:
 		e.bind_y                 = 0;
 		e.bind_z                 = 0;
 		e.select_rank            = 50;
-		e.content_flags          = "";
-		e.content_flags_disabled = "";
 		e.min_expansion          = -1;
 		e.max_expansion          = -1;
+		e.content_flags          = "";
+		e.content_flags_disabled = "";
 
 		return e;
 	}
@@ -202,10 +202,10 @@ public:
 			e.bind_y                 = row[12] ? strtof(row[12], nullptr) : 0;
 			e.bind_z                 = row[13] ? strtof(row[13], nullptr) : 0;
 			e.select_rank            = row[14] ? static_cast<uint8_t>(strtoul(row[14], nullptr, 10)) : 50;
-			e.content_flags          = row[15] ? row[15] : "";
-			e.content_flags_disabled = row[16] ? row[16] : "";
-			e.min_expansion          = row[17] ? strtof(row[17], nullptr) : -1;
-			e.max_expansion          = row[18] ? strtof(row[18], nullptr) : -1;
+			e.min_expansion          = row[15] ? strtof(row[15], nullptr) : -1;
+			e.max_expansion          = row[16] ? strtof(row[16], nullptr) : -1;
+			e.content_flags          = row[17] ? row[17] : "";
+			e.content_flags_disabled = row[18] ? row[18] : "";
 
 			return e;
 		}
@@ -254,10 +254,10 @@ public:
 		v.push_back(columns[12] + " = " + std::to_string(e.bind_y));
 		v.push_back(columns[13] + " = " + std::to_string(e.bind_z));
 		v.push_back(columns[14] + " = " + std::to_string(e.select_rank));
-		v.push_back(columns[15] + " = '" + Strings::Escape(e.content_flags) + "'");
-		v.push_back(columns[16] + " = '" + Strings::Escape(e.content_flags_disabled) + "'");
-		v.push_back(columns[17] + " = " + std::to_string(e.min_expansion));
-		v.push_back(columns[18] + " = " + std::to_string(e.max_expansion));
+		v.push_back(columns[15] + " = " + std::to_string(e.min_expansion));
+		v.push_back(columns[16] + " = " + std::to_string(e.max_expansion));
+		v.push_back(columns[17] + " = '" + Strings::Escape(e.content_flags) + "'");
+		v.push_back(columns[18] + " = '" + Strings::Escape(e.content_flags_disabled) + "'");
 
 		auto results = db.QueryDatabase(
 			fmt::format(
@@ -294,10 +294,10 @@ public:
 		v.push_back(std::to_string(e.bind_y));
 		v.push_back(std::to_string(e.bind_z));
 		v.push_back(std::to_string(e.select_rank));
-		v.push_back("'" + Strings::Escape(e.content_flags) + "'");
-		v.push_back("'" + Strings::Escape(e.content_flags_disabled) + "'");
 		v.push_back(std::to_string(e.min_expansion));
 		v.push_back(std::to_string(e.max_expansion));
+		v.push_back("'" + Strings::Escape(e.content_flags) + "'");
+		v.push_back("'" + Strings::Escape(e.content_flags_disabled) + "'");
 
 		auto results = db.QueryDatabase(
 			fmt::format(
@@ -342,10 +342,10 @@ public:
 			v.push_back(std::to_string(e.bind_y));
 			v.push_back(std::to_string(e.bind_z));
 			v.push_back(std::to_string(e.select_rank));
-			v.push_back("'" + Strings::Escape(e.content_flags) + "'");
-			v.push_back("'" + Strings::Escape(e.content_flags_disabled) + "'");
 			v.push_back(std::to_string(e.min_expansion));
 			v.push_back(std::to_string(e.max_expansion));
+			v.push_back("'" + Strings::Escape(e.content_flags) + "'");
+			v.push_back("'" + Strings::Escape(e.content_flags_disabled) + "'");
 
 			insert_chunks.push_back("(" + Strings::Implode(",", v) + ")");
 		}
@@ -394,10 +394,10 @@ public:
 			e.bind_y                 = row[12] ? strtof(row[12], nullptr) : 0;
 			e.bind_z                 = row[13] ? strtof(row[13], nullptr) : 0;
 			e.select_rank            = row[14] ? static_cast<uint8_t>(strtoul(row[14], nullptr, 10)) : 50;
-			e.content_flags          = row[15] ? row[15] : "";
-			e.content_flags_disabled = row[16] ? row[16] : "";
-			e.min_expansion          = row[17] ? strtof(row[17], nullptr) : -1;
-			e.max_expansion          = row[18] ? strtof(row[18], nullptr) : -1;
+			e.min_expansion          = row[15] ? strtof(row[15], nullptr) : -1;
+			e.max_expansion          = row[16] ? strtof(row[16], nullptr) : -1;
+			e.content_flags          = row[17] ? row[17] : "";
+			e.content_flags_disabled = row[18] ? row[18] : "";
 
 			all_entries.push_back(e);
 		}
@@ -437,10 +437,10 @@ public:
 			e.bind_y                 = row[12] ? strtof(row[12], nullptr) : 0;
 			e.bind_z                 = row[13] ? strtof(row[13], nullptr) : 0;
 			e.select_rank            = row[14] ? static_cast<uint8_t>(strtoul(row[14], nullptr, 10)) : 50;
-			e.content_flags          = row[15] ? row[15] : "";
-			e.content_flags_disabled = row[16] ? row[16] : "";
-			e.min_expansion          = row[17] ? strtof(row[17], nullptr) : -1;
-			e.max_expansion          = row[18] ? strtof(row[18], nullptr) : -1;
+			e.min_expansion          = row[15] ? strtof(row[15], nullptr) : -1;
+			e.max_expansion          = row[16] ? strtof(row[16], nullptr) : -1;
+			e.content_flags          = row[17] ? row[17] : "";
+			e.content_flags_disabled = row[18] ? row[18] : "";
 
 			all_entries.push_back(e);
 		}

@@ -175,6 +175,29 @@ void NPC::SpellProcess()
 	}
 }
 
+namespace {
+	bool IsWhitelistedBeneficialSpellForSelfFound(uint16 spell_id, Client *caster, Client *target)
+	{
+		if (caster == nullptr || !caster->IsSelfFound())
+			return false;
+
+		if (target == nullptr || !target->IsSelfFound() || target->IsSoloOnly())
+			return false;
+
+		if (spell_id == SPELL_WIND_OF_THE_NORTH || spell_id == SPELL_WIND_OF_THE_SOUTH ||
+				spell_id == SPELL_TISHANS_RELOCATION || spell_id == SPELL_MARKARS_RELOCATION)
+			return true;
+
+		if (IsTeleportSpell(spell_id))
+			return true;
+
+		if (IsEffectInSpell(spell_id, SE_BindAffinity))
+			return true;
+
+		return false;
+	}
+}
+
 ///////////////////////////////////////////////////////////////////////////////
 // functions related to begin/finish casting, fizzling etc
 //
@@ -258,14 +281,14 @@ bool Mob::CastSpell(uint16 spell_id, uint16 target_id, CastingSlot slot,
 	}
 
 	//prevent immune from aggro and spells npcs from being casted on.
-	if (IsClient() && spell_target && spell_target->IsNPC())
+	if (IsClient() && spell_target && spell_target->IsNPC() && spells[spell_id].targettype != ST_Self && !IsGroupSpell(spell_id))
 	{
 		NPC* spell_target_npc = spell_target->CastToNPC();
 		if (spell_target_npc)
 		{
 			if (spell_target_npc->GetSpecialAbility(IMMUNE_MAGIC) && spell_target_npc->GetSpecialAbility(IMMUNE_AGGRO))
 			{
-				InterruptSpell(CANNOT_AFFECT_NPC, CC_User_SpellFailure, spell_id, true, false);
+				InterruptSpell(CANNOT_AFFECT_NPC, Chat::SpellFailure, spell_id, true, false);
 				return false;
 			}
 		}
@@ -422,6 +445,11 @@ bool Mob::DoCastSpell(uint16 spell_id, uint16 target_id, CastingSlot slot,
 		spell.targettype == ST_AECaster)
 	{
 		Log(Logs::Detail, Logs::Spells, "Spell %d auto-targeted the caster. Group? %d, target type %d", spell_id, IsGroupSpell(spell_id), spell.targettype);
+		target_id = GetID();
+	}
+
+	if(target_id == 0 && spell.targettype == ST_Target && IsEffectInSpell(spell_id, SE_SummonItem)) {
+		Log(Logs::Detail, Logs::Spells, "SE_SummonItem spell %d auto-targeted the caster.", spell_id);
 		target_id = GetID();
 	}
 
@@ -633,9 +661,17 @@ bool Mob::DoPreCastingChecks(uint16 spell_id, CastingSlot slot, uint16 spell_tar
 			return false;
 		}
 
+		// Interrupt summon item spells cast onto non-pet npcs
+		if(spells[spell_id].targettype == ST_Target && IsEffectInSpell(spell_id, SE_SummonItem) &&
+				spell_target && (!spell_target->IsPet() && !spell_target->IsClient()))
+		{
+			InterruptSpell(CANNOT_AFFECT_NPC, Chat::SpellFailure, spell_id, false, false);
+			return false;
+		}
+
 		// Interrupt spell casts that are targetting self found or solo if they're not allowed
 		// Already know caster is a client from the first check in this function
-		if(spell_target && spell_target->IsClient())					
+		if(spell_target && spell_target->IsClient() && spells[spell_id].targettype != ST_Self && !IsGroupSpell(spell_id))
 		{
 			// Only fail if it's beneficial - don't want to fail on detrimental for pvp purposes
 			if(IsBeneficialSpell(spell_id))
@@ -656,7 +692,7 @@ bool Mob::DoPreCastingChecks(uint16 spell_id, CastingSlot slot, uint16 spell_tar
 				} 
 				if (spell_target->CastToClient()->IsSelfFound() && spell_target != this)
 				{
-					bool can_get_experience = spell_target->CastToClient()->IsInLevelRange(caster->GetLevel2());
+					bool can_get_experience = spell_target->CastToClient()->IsInLevelRange(caster->GetLevel2()) && caster->IsInLevelRange(spell_target->CastToClient()->GetLevel2());
 					bool compatible = caster->IsSelfFound() == spell_target->CastToClient()->IsSelfFound();
 					if (!compatible)
 					{
@@ -664,7 +700,7 @@ bool Mob::DoPreCastingChecks(uint16 spell_id, CastingSlot slot, uint16 spell_tar
 						is_failed_cast = true;
 						fail_message = SELF_FOUND_ERROR;
 					}
-					else if(compatible && !can_get_experience)
+					else if(compatible && !can_get_experience && !IsWhitelistedBeneficialSpellForSelfFound(spell_id, caster, spell_target->CastToClient()))
 					{
 						// if the spell_target can not get EXP while grouped with the caster, don't allow the caster to buff
 						is_failed_cast = true;
@@ -673,8 +709,8 @@ bool Mob::DoPreCastingChecks(uint16 spell_id, CastingSlot slot, uint16 spell_tar
 				}
 				if (is_failed_cast)
 				{
-					Message(CC_User_SpellFailure, fail_message);
-					InterruptSpell(CANNOT_AFFECT_PC, CC_User_SpellFailure, spell_id, false, false);
+					Message(Chat::SpellFailure, fail_message);
+					InterruptSpell(CANNOT_AFFECT_PC, Chat::SpellFailure, spell_id, false, false);
 					return false;
 				}
 			}
@@ -2397,6 +2433,59 @@ int Mob::CalcBuffDuration(Mob *caster, Mob *target, uint16 spell_id, int32 caste
 
 	if (caster && caster->IsClient() && IsBeneficialSpell(spell_id) && formula != DF_Permanent)
 	{
+		// Override timers on specific or global spells
+		if (RuleB(Quarm, SpellTimerOverride))
+		{
+			// Override List, if set, will look like - ID:TIC,ID:TIC,ID:MULTx,...,*:MULTx
+			std::string spellTimerOverrideList = RuleS(Quarm, SpellTimerOverrideList);
+			
+			if(!spellTimerOverrideList.empty()) 
+			{	
+				for (const auto &spellIdTimerOverride : Strings::Split(spellTimerOverrideList, ',')) {
+					auto spellIdTimerOverrideProp = Strings::Split(spellIdTimerOverride, ':');
+					if (spellIdTimerOverrideProp.size() != 2) 
+					{
+						continue;
+					}
+					
+					std::string spellOverrideKey   = spellIdTimerOverrideProp[0];
+					std::string spellOverrideValue = spellIdTimerOverrideProp[1];
+					std::string checkMultiplier    = Strings::Replace(spellOverrideValue, "x", "");
+
+					int spellIdOverride = Strings::IsNumber(spellOverrideKey) ? std::stoul(spellOverrideKey) : 0;
+					
+					// This override did not match the spell being cast
+					if (spell_id != spellIdOverride && spellOverrideKey != "*")
+					{
+						continue;
+					}
+					// If we aren't a float/integer then this is not a valid override
+					if (!Strings::IsFloat(checkMultiplier)) {
+						continue;
+					}
+					
+					float spellTimerValue = std::stof(checkMultiplier);
+							
+					// We didn't detect a multiplier, it was an exact timer
+					if (checkMultiplier == spellOverrideValue)
+					{
+						res = static_cast<int>(spellTimerValue);
+					}
+					// We have a multipler instead
+					else 
+					{
+						res = static_cast<int>(res * spellTimerValue);
+					}
+					
+					Log(Logs::Detail, Logs::Spells, "Spell Override Applied! spell_id:%d, matched:%s, value:%s, res:%d", spell_id, spellOverrideKey.c_str(), spellOverrideValue.c_str(), res);
+					
+					// If we get a match, there's no need to continue through the list.
+					// This means the global wildcard '*' must be at the end of the list so that specific spells can be applied prior
+					break;
+				}
+			}
+		}
+		
 		int aa_bonus = 0;
 		uint8 spell_reinforcement = caster->GetAA(aaSpellCastingReinforcement);
 		if (spell_reinforcement > 0)
@@ -2923,12 +3012,13 @@ bool Mob::SpellOnTarget(uint16 spell_id, Mob* spelltar, bool reflect, bool use_r
 
 				}
 
-				if(!IsBeneficialAllowed(spelltar) ||
+				if(!IsBeneficialAllowed(spelltar) && !IsWhitelistedBeneficialSpellForSelfFound(spell_id, pClient, pClientTarget) ||
 					(IsGroupOnlySpell(spell_id) &&
 						!(
 							(pBasicGroup && ((pBasicGroup == pBasicGroupTarget) || (pBasicGroup == pBasicGroupTargetPet))) || //Basic Group
 
 							((nGroup > 0) && ((nGroup == nGroupTarget) || (nGroup == nGroupTargetPet))) || //Raid group
+							(pRaid && ((pRaid == pRaidTarget) || (pRaid == pRaidTargetPet)) && !IsBuffSpell(spell_id)) || //Raid. Buffs don't sync client-side
 
 							(spelltar == GetPet()) //should be able to cast grp spells on self and pet despite grped status.
 						)
@@ -3339,7 +3429,7 @@ void Corpse::CastRezz(uint16 spellid, Mob* Caster)
 	rezz->unknown020 = 0x00000000;
 	rezz->unknown088 = 0x00000000;
 	// We send this to world, because it needs to go to the player who may not be in this zone.
-	worldserver.RezzPlayer(outapp, rez_experience, corpse_db_id, OP_RezzRequest);
+	worldserver.RezzPlayer(outapp, rez_experience, corpse_db_id, char_id, OP_RezzRequest);
 	safe_delete(outapp);
 }
 
@@ -3598,7 +3688,7 @@ bool Mob::IsImmuneToSpell(uint16 spell_id, Mob *caster, bool isProc)
 		if (GetClass() == MERCHANT || GetClass() == BANKER || GetClass() >= WARRIORGM && GetClass() <= BEASTLORDGM)
 		{
 			Log(Logs::Detail, Logs::Spells, "We are immune to Charm spells. (Banker, Merchant, Guildmaster)");
-			caster->Message_StringID(CC_User_SpellFailure, CANNOT_CHARM);
+			caster->Message_StringID(Chat::SpellFailure, CANNOT_CHARM);
 			ResistSpell(caster, spell_id, isProc);
 			return true;
 		}
@@ -3896,51 +3986,6 @@ float Mob::CheckResistSpell(uint8 resist_type, uint16 spell_id, Mob *caster, Mob
 	}
 
 	bool use_classic_resists = RuleR(World, CurrentExpansion) < (float)ExpansionEras::LuclinEQEra + 0.79;
-
-	//Add our level, resist and -spell resist modifier to our roll chance
-	resist_chance += target_resist;
-	resist_chance += level_mod;
-	if (use_classic_resists && IsClient())
-	{
-		if (resist_chance > 200 && spells[spell_id].targettype == ST_Tap)
-			resist_chance = 200;
-
-		if (caster->IsNPC())
-		{
-			if (spell_id == 837)	// Stun Breath
-				resist_modifier = -50;
-			if (spell_id == 843)	// Immolating Breath
-				resist_modifier = -100;
-
-			if (resist_modifier == -150)
-			{
-				// dragon aoes
-				resist_modifier = -100;
-			}
-		}
-
-		int hardcap = 350;
-		if (RuleR(World, CurrentExpansion) < (float)ExpansionEras::VeliousEQEra)
-			hardcap = 250;
-
-		if (resist_chance > hardcap)
-			resist_chance = hardcap;
-
-		if (resist_chance > 200)
-			resist_chance = 200 + (resist_chance - 200) / 2;
-	}
-
-	resist_chance += resist_modifier;
-
-	if (use_classic_resists && caster->IsNPC() && caster->GetLevel() > 24 && zone->GetZoneID() != sirens
-		&& (caster->GetClass() == ENCHANTER || caster->GetClass() == ENCHANTERGM) )
-	{
-		if (GetLevel() < resist_chance)
-			resist_chance = GetLevel();
-
-		if (resist_chance > 80)
-			resist_chance = 80;
-	}
 
 	//Add our level, resist and -spell resist modifier to our roll chance
 	resist_chance += target_resist;
@@ -4538,6 +4583,50 @@ bool Client::SpellGlobalCheck(uint16 spell_ID, uint32 char_ID) {
     // If no matching result found in qglobals, don't scribe this spell
     Log(Logs::General, Logs::Error, "Char ID: %i Spell_globals Name: '%s' Value: '%i' did not match QGlobal Value: '%i' for Spell ID %i", char_ID, spell_Global_Name.c_str(), spell_Global_Value, global_Value, spell_ID);
     return false;
+}
+
+bool Client::SpellBucketCheck(uint16 spell_id, uint32 char_id) {
+	std::string spell_bucket_name;
+	int spell_bucket_value;
+	int bucket_value;
+	std::string query = StringFormat("SELECT key, value FROM spell_buckets WHERE spellid = %i", spell_id);
+	auto results = database.QueryDatabase(query);
+	if (!results.Success())
+		return false;
+
+	if (results.RowCount() != 1)
+		return true;
+
+	auto row = results.begin();
+	spell_bucket_name = row[0];
+	spell_bucket_value = atoi(row[1]);
+	if (spell_bucket_name.empty())
+		return true;
+
+	query = StringFormat("SELECT value FROM data_buckets WHERE key = '%i-%s'", char_id, spell_bucket_name.c_str());
+	results = database.QueryDatabase(query);
+	if (!results.Success()) {
+		Log(Logs::General, Logs::Error, "Spell bucket %s for spell ID %i for char ID %i failed.", spell_bucket_name.c_str(), spell_id, char_id);
+		return false;
+	}
+
+	if (results.RowCount() != 1) {
+		Log(Logs::General, Logs::Error, "Spell bucket %s does not exist for spell ID %i for char ID %i.", spell_bucket_name.c_str(), spell_id, char_id);
+		return false;
+	}
+
+	row = results.begin();
+
+	bucket_value = atoi(row[0]);
+
+	if (bucket_value == spell_bucket_value)
+		return true; // If the values match from both tables, allow the spell to be scribed
+	else if (bucket_value > spell_bucket_value)
+		return true; // Check if the data bucket value is greater than the required spell bucket value
+
+	// If no matching result found in spell buckets, don't scribe this spell
+	Log(Logs::General, Logs::Error, "Spell bucket %s for spell ID %i for char ID %i did not match value %i.", spell_bucket_name.c_str(), spell_id, char_id, spell_bucket_value);
+	return false;
 }
 
 int16 Mob::GetBuffSlotFromType(uint16 type) {

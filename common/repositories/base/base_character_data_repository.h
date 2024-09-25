@@ -87,7 +87,6 @@ public:
 		int8_t      e_hardcore;
 		int64_t     e_hardcore_death_time;
 		uint8_t     e_betabuff_gear_flag;
-		uint8_t     e_bigger_wolves;
 		uint32_t    e_zone_guild_id;
 		std::string e_temp_last_name;
 		int32_t     e_married_character_id;
@@ -170,7 +169,6 @@ public:
 			"e_hardcore",
 			"e_hardcore_death_time",
 			"e_betabuff_gear_flag",
-			"e_bigger_wolves",
 			"e_zone_guild_id",
 			"e_temp_last_name",
 			"e_married_character_id",
@@ -249,7 +247,6 @@ public:
 			"e_hardcore",
 			"e_hardcore_death_time",
 			"e_betabuff_gear_flag",
-			"e_bigger_wolves",
 			"e_zone_guild_id",
 			"e_temp_last_name",
 			"e_married_character_id",
@@ -362,7 +359,6 @@ public:
 		e.e_hardcore             = 0;
 		e.e_hardcore_death_time  = 0;
 		e.e_betabuff_gear_flag   = 0;
-		e.e_bigger_wolves        = 0;
 		e.e_zone_guild_id        = 4294967295;
 		e.e_temp_last_name       = "";
 		e.e_married_character_id = 0;
@@ -471,11 +467,10 @@ public:
 			e.e_hardcore             = row[65] ? static_cast<int8_t>(atoi(row[65])) : 0;
 			e.e_hardcore_death_time  = row[66] ? strtoll(row[66], nullptr, 10) : 0;
 			e.e_betabuff_gear_flag   = row[67] ? static_cast<uint8_t>(strtoul(row[67], nullptr, 10)) : 0;
-			e.e_bigger_wolves        = row[68] ? static_cast<uint8_t>(strtoul(row[68], nullptr, 10)) : 0;
-			e.e_zone_guild_id        = row[69] ? static_cast<uint32_t>(strtoul(row[69], nullptr, 10)) : 4294967295;
-			e.e_temp_last_name       = row[70] ? row[70] : "";
-			e.e_married_character_id = row[71] ? static_cast<int32_t>(atoi(row[71])) : 0;
-			e.e_char_export_flag     = row[72] ? static_cast<uint8_t>(strtoul(row[72], nullptr, 10)) : 0;
+			e.e_zone_guild_id        = row[68] ? static_cast<uint32_t>(strtoul(row[68], nullptr, 10)) : 4294967295;
+			e.e_temp_last_name       = row[69] ? row[69] : "";
+			e.e_married_character_id = row[70] ? static_cast<int32_t>(atoi(row[70])) : 0;
+			e.e_char_export_flag     = row[71] ? static_cast<uint8_t>(strtoul(row[71], nullptr, 10)) : 0;
 
 			return e;
 		}
@@ -576,11 +571,10 @@ public:
 		v.push_back(columns[65] + " = " + std::to_string(e.e_hardcore));
 		v.push_back(columns[66] + " = " + std::to_string(e.e_hardcore_death_time));
 		v.push_back(columns[67] + " = " + std::to_string(e.e_betabuff_gear_flag));
-		v.push_back(columns[68] + " = " + std::to_string(e.e_bigger_wolves));
-		v.push_back(columns[69] + " = " + std::to_string(e.e_zone_guild_id));
-		v.push_back(columns[70] + " = '" + Strings::Escape(e.e_temp_last_name) + "'");
-		v.push_back(columns[71] + " = " + std::to_string(e.e_married_character_id));
-		v.push_back(columns[72] + " = " + std::to_string(e.e_char_export_flag));
+		v.push_back(columns[68] + " = " + std::to_string(e.e_zone_guild_id));
+		v.push_back(columns[69] + " = '" + Strings::Escape(e.e_temp_last_name) + "'");
+		v.push_back(columns[70] + " = " + std::to_string(e.e_married_character_id));
+		v.push_back(columns[71] + " = " + std::to_string(e.e_char_export_flag));
 
 		auto results = db.QueryDatabase(
 			fmt::format(
@@ -670,7 +664,6 @@ public:
 		v.push_back(std::to_string(e.e_hardcore));
 		v.push_back(std::to_string(e.e_hardcore_death_time));
 		v.push_back(std::to_string(e.e_betabuff_gear_flag));
-		v.push_back(std::to_string(e.e_bigger_wolves));
 		v.push_back(std::to_string(e.e_zone_guild_id));
 		v.push_back("'" + Strings::Escape(e.e_temp_last_name) + "'");
 		v.push_back(std::to_string(e.e_married_character_id));
@@ -772,7 +765,6 @@ public:
 			v.push_back(std::to_string(e.e_hardcore));
 			v.push_back(std::to_string(e.e_hardcore_death_time));
 			v.push_back(std::to_string(e.e_betabuff_gear_flag));
-			v.push_back(std::to_string(e.e_bigger_wolves));
 			v.push_back(std::to_string(e.e_zone_guild_id));
 			v.push_back("'" + Strings::Escape(e.e_temp_last_name) + "'");
 			v.push_back(std::to_string(e.e_married_character_id));
@@ -878,11 +870,10 @@ public:
 			e.e_hardcore             = row[65] ? static_cast<int8_t>(atoi(row[65])) : 0;
 			e.e_hardcore_death_time  = row[66] ? strtoll(row[66], nullptr, 10) : 0;
 			e.e_betabuff_gear_flag   = row[67] ? static_cast<uint8_t>(strtoul(row[67], nullptr, 10)) : 0;
-			e.e_bigger_wolves        = row[68] ? static_cast<uint8_t>(strtoul(row[68], nullptr, 10)) : 0;
-			e.e_zone_guild_id        = row[69] ? static_cast<uint32_t>(strtoul(row[69], nullptr, 10)) : 4294967295;
-			e.e_temp_last_name       = row[70] ? row[70] : "";
-			e.e_married_character_id = row[71] ? static_cast<int32_t>(atoi(row[71])) : 0;
-			e.e_char_export_flag     = row[72] ? static_cast<uint8_t>(strtoul(row[72], nullptr, 10)) : 0;
+			e.e_zone_guild_id        = row[68] ? static_cast<uint32_t>(strtoul(row[68], nullptr, 10)) : 4294967295;
+			e.e_temp_last_name       = row[69] ? row[69] : "";
+			e.e_married_character_id = row[70] ? static_cast<int32_t>(atoi(row[70])) : 0;
+			e.e_char_export_flag     = row[71] ? static_cast<uint8_t>(strtoul(row[71], nullptr, 10)) : 0;
 
 			all_entries.push_back(e);
 		}
@@ -975,11 +966,10 @@ public:
 			e.e_hardcore             = row[65] ? static_cast<int8_t>(atoi(row[65])) : 0;
 			e.e_hardcore_death_time  = row[66] ? strtoll(row[66], nullptr, 10) : 0;
 			e.e_betabuff_gear_flag   = row[67] ? static_cast<uint8_t>(strtoul(row[67], nullptr, 10)) : 0;
-			e.e_bigger_wolves        = row[68] ? static_cast<uint8_t>(strtoul(row[68], nullptr, 10)) : 0;
-			e.e_zone_guild_id        = row[69] ? static_cast<uint32_t>(strtoul(row[69], nullptr, 10)) : 4294967295;
-			e.e_temp_last_name       = row[70] ? row[70] : "";
-			e.e_married_character_id = row[71] ? static_cast<int32_t>(atoi(row[71])) : 0;
-			e.e_char_export_flag     = row[72] ? static_cast<uint8_t>(strtoul(row[72], nullptr, 10)) : 0;
+			e.e_zone_guild_id        = row[68] ? static_cast<uint32_t>(strtoul(row[68], nullptr, 10)) : 4294967295;
+			e.e_temp_last_name       = row[69] ? row[69] : "";
+			e.e_married_character_id = row[70] ? static_cast<int32_t>(atoi(row[70])) : 0;
+			e.e_char_export_flag     = row[71] ? static_cast<uint8_t>(strtoul(row[71], nullptr, 10)) : 0;
 
 			all_entries.push_back(e);
 		}

@@ -228,7 +228,7 @@ void WorldServer::Process() {
 				break;
 			ServerSpawnCondition_Struct* ssc = (ServerSpawnCondition_Struct*) pack->pBuffer;
 
-			zone->spawn_conditions.SetCondition(zone->GetShortName(), ssc->condition_id, ssc->value, true);
+			zone->spawn_conditions.SetCondition(zone->GetShortName(), zone->GetGuildID(), ssc->condition_id, ssc->value, true);
 			break;
 		}
 		case ServerOP_SpawnEvent: {
@@ -610,7 +610,7 @@ void WorldServer::Process() {
 				// The Rezz request has arrived in the zone the player to be rezzed is currently in,
 				// so we send the request to their client which will bring up the confirmation box.
 				Client* client = entity_list.GetClientByName(srs->rez.your_name);
-				if (client)
+				if (client && client->CharacterID() == srs->corpse_character_id)
 				{
 					if(client->IsRezzPending())
 					{
@@ -1695,7 +1695,8 @@ void WorldServer::Process() {
 			}
 			break;
 		}
-		case ServerOP_UpdateSchedulerEvents : {
+		case ServerOP_UpdateSchedulerEvents: {
+
 			LogScheduler("Received signal from world to update");
 			if (m_zone_scheduler) {
 				m_zone_scheduler->LoadScheduledEvents();
@@ -1905,7 +1906,7 @@ void WorldServer::Process() {
 					should_broadcast_notif = zone->ResetEngageNotificationTargets((RuleI(Quarm, QuakeRepopDelay)) * 1000); // if we reset at least one, this is true
 					if (should_broadcast_notif)
 					{
-						entity_list.Message(CC_Default, CC_Yellow, "Raid targets in this zone will repop! Rule 9.x and Rule 10.x have been suspended temporarily in this zone because of its ruleset, also listed in the /motd.");
+						entity_list.Message(Chat::Default, Chat::Yellow, "Raid targets in this zone will repop! Rule 9.x and Rule 10.x have been suspended temporarily in this zone because of its ruleset, also listed in the /motd.");
 						entity_list.EvacAllPlayers();
 					}
 				}
@@ -2048,7 +2049,7 @@ bool WorldServer::SendEmoteMessage(const char* to, uint32 to_guilddbid, int16 to
 	return ret;
 }
 
-bool WorldServer::RezzPlayer(EQApplicationPacket* rpack, uint32 rezzexp, uint32 dbid, uint16 opcode)
+bool WorldServer::RezzPlayer(EQApplicationPacket* rpack, uint32 rezzexp, uint32 dbid, uint32 char_id, uint16 opcode)
 {
 	Log(Logs::Detail, Logs::Spells, "WorldServer::RezzPlayer rezzexp is %i (0 is normal for RezzComplete", rezzexp);
 	auto pack = new ServerPacket(ServerOP_RezzPlayer, sizeof(RezzPlayer_Struct));
@@ -2057,6 +2058,7 @@ bool WorldServer::RezzPlayer(EQApplicationPacket* rpack, uint32 rezzexp, uint32 
 	sem->rez = *(Resurrect_Struct*) rpack->pBuffer;
 	sem->exp = rezzexp;
 	sem->dbid = dbid;
+	sem->corpse_character_id = char_id;
 	sem->corpse_zone_id = zone->GetZoneID();
 	sem->corpse_zone_guild_id = zone->GetGuildID();
 	bool ret = SendPacket(pack);

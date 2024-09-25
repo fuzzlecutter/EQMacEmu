@@ -21,6 +21,7 @@ public:
 	bool IsDoor() const { return true; }
 	bool IsDoorOpen() { return is_open; }
 	bool IsMoveable() { return can_open; }
+	bool IsInstanceOnly() { return instance_only; }
 	bool IsTeleport() { return teleport; }
 	bool Process();
 	bool triggered;
@@ -98,6 +99,7 @@ private:
 	Timer      lift_timer;
 	uint8      close_time;
 	bool       can_open;
+	bool	   instance_only;
 	char       destination_zone_name[16];
 	glm::vec4  m_destination;
 	uint32	   client_version_mask;

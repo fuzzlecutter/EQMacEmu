@@ -3417,6 +3417,9 @@ void NPC::AddSpellToNPCList(int16 iPriority, int16 iSpellID, uint16 iType,
 	// If we're going from an empty list, we need to start the timer
 	if (AIspells.size() == 1)
 		AIautocastspell_timer->Start(100, false);
+		
+	if (iPriority == 0 && iType & (SpellType_Nuke | SpellType_Lifetap | SpellType_DOT | SpellType_Dispel | SpellType_Mez | SpellType_Slow | SpellType_Debuff | SpellType_Charm | SpellType_Root))
+        hasZeroPrioritySpells = true;
 }
 
 void NPC::RemoveSpellFromNPCList(int16 spell_id)

@@ -350,6 +350,7 @@ public:
 	inline uint8 IsSoloOnly() const { return m_epp.solo_only; }
 	inline uint8 IsSelfFound() const { return m_epp.self_found; }
 	inline uint8 HasBetaBuffGearFlag() const { return m_epp.betabuff_gear_flag; }
+	std::string GetSSFLooterName();
 
 	inline void SetHardcore(uint8 in_hardcore) { m_epp.hardcore = in_hardcore; }
 	inline void SetSoloOnly(uint8 in_solo_only) { m_epp.solo_only = in_solo_only; }
@@ -679,8 +680,10 @@ public:
 	void UnscribeSpell(int slot, bool update_client = true, bool defer_save = false);
 
 	void UnscribeSpellAll(bool update_client = true);
-	bool SpellGlobalCheck(uint16 Spell_ID, uint32 Char_ID);
+	bool SpellGlobalCheck(uint16 spell_id, uint32 char_id);
+	bool SpellBucketCheck(uint16 spell_id, uint32 char_id);
 	uint32 GetCharMaxLevelFromQGlobal();
+	uint32 GetCharMaxLevelFromBucket();
 
 	inline bool IsSitting() const {return (playeraction == eaSitting);}
 	inline bool IsBecomeNPC() const { return npcflag; }

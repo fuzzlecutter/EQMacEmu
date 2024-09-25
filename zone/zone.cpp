@@ -882,6 +882,10 @@ void Zone::LoadZoneDoors(std::string zone)
 	for (const auto &entry : door_entries)
 	{
 		auto newdoor = new Doors(entry);
+		
+		if (GetGuildID() == GUILD_NONE && newdoor->IsInstanceOnly()) 
+			continue;
+			
 		entity_list.AddDoor(newdoor);
 		LogInfo("Door added to entity list, db id: [{}], door_id: [{}]", entry.id, entry.doorid);
 	}
@@ -1050,7 +1054,7 @@ bool Zone::Init(bool iStaticZone) {
 	zone->update_range = 1000.0f;
 
 	LogInfo("Loading spawn conditions...");
-	if(!spawn_conditions.LoadSpawnConditions(short_name)) {
+	if(!spawn_conditions.LoadSpawnConditions(short_name, GetGuildID())) {
 		LogError("Loading spawn conditions failed, continuing without them.");
 	}
 
@@ -1213,6 +1217,7 @@ void Zone::ReloadStaticData() {
 
 	content_service.SetExpansionContext()->ReloadContentFlags();
 
+	ReloadLootTables();
 
 	LogInfo("Zone Static Data Reloaded.");
 }
@@ -1378,7 +1383,7 @@ bool Zone::Process() {
 		bool should_broadcast_notif = zone->ResetEngageNotificationTargets((RuleI(Quarm, QuakeMaxVariance) * 2) * 1000, true); // if we reset at least one, this is true
 		if (should_broadcast_notif)
 		{
-			entity_list.Message(CC_Default, CC_Yellow, "The quake has concluded. Rules 9.x and 10.x will once again apply where relevant.");
+			entity_list.Message(Chat::Default, Chat::Yellow, "The quake has concluded. Rules 9.x and 10.x will once again apply where relevant.");
 		}
 		entity_list.TogglePVPForQuake();
 		EndQuake_Timer->Disable();
@@ -1703,7 +1708,7 @@ void Zone::Repop() {
 	}
 
 	LogInfo("Loading spawn conditions");
-	if (!spawn_conditions.LoadSpawnConditions(short_name)) {
+	if (!spawn_conditions.LoadSpawnConditions(short_name, GetGuildID())) {
 		LogError("Loading spawn conditions failed, continuing without them");
 	}
 

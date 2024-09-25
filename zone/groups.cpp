@@ -102,7 +102,7 @@ void Group::SplitMoney(uint32 copper, uint32 silver, uint32 gold, uint32 platinu
 	}
 
 	if (share && splitter && splitter->IsSelfFound()) {
-		splitter->Message(CC_Red, "The /split function is not allowed in a self found group.");
+		splitter->Message(Chat::Red, "The /split function is not allowed in a self found group.");
 		return;
 	}
 
@@ -358,8 +358,8 @@ void Group::SendHPPacketsFrom(Mob *member)
 
 //updates a group member's client pointer when they zone in
 //if the group was in the zone already
-bool Group::UpdatePlayer(Mob* update){
-
+bool Group::UpdatePlayer(Mob* update)
+{
 	VerifyGroup();
 
 	uint32 i=0;
@@ -884,6 +884,7 @@ void Group::VerifyGroup()
 	*/
 
 	uint32 i;
+
 	for (i = 0; i < MAX_GROUP_MEMBERS; i++) 
 	{
 		if (membername[i][0] == '\0') 

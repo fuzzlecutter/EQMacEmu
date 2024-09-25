@@ -114,9 +114,9 @@ public:
 		float       banish_y;
 		float       banish_z;
 		float       banish_heading;
+		std::string content_flags;
 		float       min_expansion;
 		float       max_expansion;
-		std::string content_flags;
 		std::string content_flags_disabled;
 	};
 
@@ -223,9 +223,9 @@ public:
 			"banish_y",
 			"banish_z",
 			"banish_heading",
+			"content_flags",
 			"min_expansion",
 			"max_expansion",
-			"content_flags",
 			"content_flags_disabled",
 		};
 	}
@@ -328,9 +328,9 @@ public:
 			"banish_y",
 			"banish_z",
 			"banish_heading",
+			"content_flags",
 			"min_expansion",
 			"max_expansion",
-			"content_flags",
 			"content_flags_disabled",
 		};
 	}
@@ -467,9 +467,9 @@ public:
 		e.banish_y               = 0;
 		e.banish_z               = 0;
 		e.banish_heading         = 0;
+		e.content_flags          = "";
 		e.min_expansion          = -1;
 		e.max_expansion          = -1;
-		e.content_flags          = "";
 		e.content_flags_disabled = "";
 
 		return e;
@@ -602,9 +602,9 @@ public:
 			e.banish_y               = row[92] ? strtof(row[92], nullptr) : 0;
 			e.banish_z               = row[93] ? strtof(row[93], nullptr) : 0;
 			e.banish_heading         = row[94] ? strtof(row[94], nullptr) : 0;
-			e.min_expansion          = row[95] ? strtof(row[95], nullptr) : -1;
-			e.max_expansion          = row[96] ? strtof(row[96], nullptr) : -1;
-			e.content_flags          = row[97] ? row[97] : "";
+			e.content_flags          = row[95] ? row[95] : "";
+			e.min_expansion          = row[96] ? strtof(row[96], nullptr) : -1;
+			e.max_expansion          = row[97] ? strtof(row[97], nullptr) : -1;
 			e.content_flags_disabled = row[98] ? row[98] : "";
 
 			return e;
@@ -733,9 +733,9 @@ public:
 		v.push_back(columns[92] + " = " + std::to_string(e.banish_y));
 		v.push_back(columns[93] + " = " + std::to_string(e.banish_z));
 		v.push_back(columns[94] + " = " + std::to_string(e.banish_heading));
-		v.push_back(columns[95] + " = " + std::to_string(e.min_expansion));
-		v.push_back(columns[96] + " = " + std::to_string(e.max_expansion));
-		v.push_back(columns[97] + " = '" + Strings::Escape(e.content_flags) + "'");
+		v.push_back(columns[95] + " = '" + Strings::Escape(e.content_flags) + "'");
+		v.push_back(columns[96] + " = " + std::to_string(e.min_expansion));
+		v.push_back(columns[97] + " = " + std::to_string(e.max_expansion));
 		v.push_back(columns[98] + " = '" + Strings::Escape(e.content_flags_disabled) + "'");
 
 		auto results = db.QueryDatabase(
@@ -853,9 +853,9 @@ public:
 		v.push_back(std::to_string(e.banish_y));
 		v.push_back(std::to_string(e.banish_z));
 		v.push_back(std::to_string(e.banish_heading));
+		v.push_back("'" + Strings::Escape(e.content_flags) + "'");
 		v.push_back(std::to_string(e.min_expansion));
 		v.push_back(std::to_string(e.max_expansion));
-		v.push_back("'" + Strings::Escape(e.content_flags) + "'");
 		v.push_back("'" + Strings::Escape(e.content_flags_disabled) + "'");
 
 		auto results = db.QueryDatabase(
@@ -981,9 +981,9 @@ public:
 			v.push_back(std::to_string(e.banish_y));
 			v.push_back(std::to_string(e.banish_z));
 			v.push_back(std::to_string(e.banish_heading));
+			v.push_back("'" + Strings::Escape(e.content_flags) + "'");
 			v.push_back(std::to_string(e.min_expansion));
 			v.push_back(std::to_string(e.max_expansion));
-			v.push_back("'" + Strings::Escape(e.content_flags) + "'");
 			v.push_back("'" + Strings::Escape(e.content_flags_disabled) + "'");
 
 			insert_chunks.push_back("(" + Strings::Implode(",", v) + ")");
@@ -1113,9 +1113,9 @@ public:
 			e.banish_y               = row[92] ? strtof(row[92], nullptr) : 0;
 			e.banish_z               = row[93] ? strtof(row[93], nullptr) : 0;
 			e.banish_heading         = row[94] ? strtof(row[94], nullptr) : 0;
-			e.min_expansion          = row[95] ? strtof(row[95], nullptr) : -1;
-			e.max_expansion          = row[96] ? strtof(row[96], nullptr) : -1;
-			e.content_flags          = row[97] ? row[97] : "";
+			e.content_flags          = row[95] ? row[95] : "";
+			e.min_expansion          = row[96] ? strtof(row[96], nullptr) : -1;
+			e.max_expansion          = row[97] ? strtof(row[97], nullptr) : -1;
 			e.content_flags_disabled = row[98] ? row[98] : "";
 
 			all_entries.push_back(e);
@@ -1236,9 +1236,9 @@ public:
 			e.banish_y               = row[92] ? strtof(row[92], nullptr) : 0;
 			e.banish_z               = row[93] ? strtof(row[93], nullptr) : 0;
 			e.banish_heading         = row[94] ? strtof(row[94], nullptr) : 0;
-			e.min_expansion          = row[95] ? strtof(row[95], nullptr) : -1;
-			e.max_expansion          = row[96] ? strtof(row[96], nullptr) : -1;
-			e.content_flags          = row[97] ? row[97] : "";
+			e.content_flags          = row[95] ? row[95] : "";
+			e.min_expansion          = row[96] ? strtof(row[96], nullptr) : -1;
+			e.max_expansion          = row[97] ? strtof(row[97], nullptr) : -1;
 			e.content_flags_disabled = row[98] ? row[98] : "";
 
 			all_entries.push_back(e);

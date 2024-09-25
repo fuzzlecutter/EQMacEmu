@@ -26,6 +26,7 @@
 #include <string.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <unordered_set>
 
 #include <signal.h>
 
@@ -117,7 +118,9 @@ EQEmuLogSys LogSys;
 ServerEarthquakeImminent_Struct next_quake;
 WorldContentService content_service;
 PathManager         path;
-
+std::unordered_set<uint32> ipWhitelist;
+std::mutex		ipMutex;
+bool bSkipFactoryAuth = false;
 extern ConsoleList console_list;
 
 void CatchSignal(int sig_num);
@@ -167,8 +170,8 @@ void TriggerManualQuake(QuakeType in_quake_type)
 	zoneserver_list.SendPacket(pack2);
 
 	//Roleplay flavor text, go!
-	zoneserver_list.SendEmoteMessage(0, 0, AccountStatus::Player, CC_Red, "Druzzil Ro's voice echoes in your mind, 'Beware, mortal. Creatures of legendary strength return to the world for a limited time.'");
-	zoneserver_list.SendEmoteMessage(0, 0, AccountStatus::Player, CC_Yellow, "Druzzil Ro's projection alters time and space. Raid creatures have appeared in open world for a short time. Rule 9.x and Rule 10.x have been suspended in open world raid zones temporarily.");
+	zoneserver_list.SendEmoteMessage(0, 0, AccountStatus::Player, Chat::Red, "Druzzil Ro's voice echoes in your mind, 'Beware, mortal. Creatures of legendary strength return to the world for a limited time.'");
+	zoneserver_list.SendEmoteMessage(0, 0, AccountStatus::Player, Chat::Yellow, "Druzzil Ro's projection alters time and space. Raid creatures have appeared in open world for a short time. Rule 9.x and Rule 10.x have been suspended in open world raid zones temporarily.");
 
 	//Inform of imminent quake. This happens after the MOTD so zone denizens are informed again with relevant information.
 	auto pack = new ServerPacket(ServerOP_QuakeImminent, sizeof(ServerEarthquakeImminent_Struct));
@@ -248,11 +251,11 @@ int main(int argc, char** argv) {
 	LogSys.LoadLogSettingsDefaults();
 	set_exception_handler();
 
-	path.LoadPaths();
-
 	if (argc > 1) {
 		WorldserverCLI::CommandHandler(argc, argv);
 	}
+
+	path.LoadPaths();
 
 	LoadServerConfig();
 
@@ -506,25 +509,25 @@ int main(int argc, char** argv) {
 
 		//give the stream identifier a chance to do its work....
 		stream_identifier.Process();
-
-		int i = 5;
+		int i = 0;
+		auto mSeconds = std::chrono::milliseconds(RuleI(Quarm, MaxTimeSpentProcessingConns));
+		auto endTime = std::chrono::high_resolution_clock::now();
 		//check the factory for any new incoming streams.
-		while ((eqs = eqsf.Pop())) {
-			//pull the stream out of the factory and give it to the stream identifier
-			//which will figure out what patch they are running, and set up the dynamic
-			//structures and opcodes for that patch.
-			struct in_addr	in{};
-			in.s_addr = eqs->GetRemoteIP();
-			LogInfo("New connection from {0}:{1}", inet_ntoa(in),ntohs(eqs->GetRemotePort()));
-			stream_identifier.AddStream(eqs);	//takes the stream
-			i++;
-			if (i == 5)
-				break;
-		}
+		// 
+		//while (beginTime + mSeconds <= std::chrono::high_resolution_clock::now() && (eqs = eqsf.Pop())) {
+		//	//pull the stream out of the factory and give it to the stream identifier
+		//	//which will figure out what patch they are running, and set up the dynamic
+		//	//structures and opcodes for that patch.
+		//	struct in_addr	in{};
+		//	in.s_addr = eqs->GetRemoteIP();
+		//	LogInfo("New connection from {0}:{1}", inet_ntoa(in),ntohs(eqs->GetRemotePort()));
+		//	stream_identifier.AddStream(eqs);	//takes the stream
+		//}
 
 		i = 0;
+		endTime = std::chrono::high_resolution_clock::now() + std::chrono::duration_cast<std::chrono::nanoseconds>(mSeconds);
 		//check the factory for any new incoming streams.
-		while ((eqos = eqsf.PopOld())) {
+		while (std::chrono::high_resolution_clock::now() <= endTime && (eqos = eqsf.PopOld())) {
 			//pull the stream out of the factory and give it to the stream identifier
 			//which will figure out what patch they are running, and set up the dynamic
 			//structures and opcodes for that patch.
@@ -533,8 +536,6 @@ int main(int argc, char** argv) {
 			LogInfo("New connection from {0}:{1}", inet_ntoa(in), ntohs(eqos->GetRemotePort()));
 			stream_identifier.AddOldStream(eqos);	//takes the stream
 			i++;
-			if (i == 5)
-				break;
 		}
 
 		i = 0;
@@ -556,28 +557,24 @@ int main(int argc, char** argv) {
 				}
 			}
 			if (!RuleB(World, UseBannedIPsTable)){
-					LogInfo("New connection from [{0}]:[{1}], processing connection", inet_ntoa(in), ntohs(eqsi->GetRemotePort()));
+					LogRulesDetail("New connection from [{0}]:[{1}], processing connection", inet_ntoa(in), ntohs(eqsi->GetRemotePort()));
 					auto client = new Client(eqsi);
 					// @merth: client->zoneattempt=0;
 					client_list.Add(client);
 			}
-			i++;
-			if (i == 5)
-				break;
 		}
 
 		event_scheduler.Process(&zoneserver_list);
 
 		client_list.Process();
 		i = 0;
-		while ((tcpc = tcps.NewQueuePop())) {
+		endTime = std::chrono::high_resolution_clock::now() + std::chrono::duration_cast<std::chrono::nanoseconds>(mSeconds);
+		while (std::chrono::high_resolution_clock::now() <= endTime && (tcpc = tcps.NewQueuePop())) {
 			struct in_addr in{};
 			in.s_addr = tcpc->GetrIP();
 			LogInfo("New TCP connection from {0}:{1}", inet_ntoa(in),tcpc->GetrPort());
 			console_list.Add(new Console(tcpc));
 			i++;
-			if (i == 5)
-				break;
 		}
 
 		if(EQTimeTimer.Check())
@@ -620,8 +617,8 @@ int main(int argc, char** argv) {
 				zoneserver_list.SendPacket(pack2);
 
 				//Roleplay flavor text, go!
-				zoneserver_list.SendEmoteMessage(0, 0, AccountStatus::Player, CC_Red, "Druzzil Ro's voice echoes in your mind, 'Beware, mortal. Creatures of legendary strength return to the world for a limited time.'");
-				zoneserver_list.SendEmoteMessage(0, 0, AccountStatus::Player, CC_Yellow, "Druzzil Ro's projection alters time and space. Raid creatures have appeared in open world for a short time. Rule 9.x and Rule 10.x have been suspended in open world raid zones temporarily.");
+				zoneserver_list.SendEmoteMessage(0, 0, AccountStatus::Player, Chat::Red, "Druzzil Ro's voice echoes in your mind, 'Beware, mortal. Creatures of legendary strength return to the world for a limited time.'");
+				zoneserver_list.SendEmoteMessage(0, 0, AccountStatus::Player, Chat::Yellow, "Druzzil Ro's projection alters time and space. Raid creatures have appeared in open world for a short time. Rule 9.x and Rule 10.x have been suspended in open world raid zones temporarily.");
 
 				//Inform of imminent quake. This happens after the MOTD so zone denizens are informed again with relevant information.
 				auto pack = new ServerPacket(ServerOP_QuakeImminent, sizeof(ServerEarthquakeImminent_Struct));
@@ -664,8 +661,8 @@ int main(int argc, char** argv) {
 				safe_delete(pack4);
 
 				//MOTD has been set. Roleplay flavor text, go!
-				zoneserver_list.SendEmoteMessage(0, 0, AccountStatus::Player, CC_Red, "Druzzil Ro's voice echoes in your mind, 'It seems as though the mortals have had enough of my games...'");
-				zoneserver_list.SendEmoteMessage(0, 0, AccountStatus::Player, CC_Yellow, "Druzzil Ro's grasp no longer archors this land... for now. The Earthquake has ended, and Rules 9.x and 10.x once again apply.");
+				zoneserver_list.SendEmoteMessage(0, 0, AccountStatus::Player, Chat::Red, "Druzzil Ro's voice echoes in your mind, 'It seems as though the mortals have had enough of my games...'");
+				zoneserver_list.SendEmoteMessage(0, 0, AccountStatus::Player, Chat::Yellow, "Druzzil Ro's grasp no longer archors this land... for now. The Earthquake has ended, and Rules 9.x and 10.x once again apply.");
 
 				//We're no longer using the timer; we've done our job. The next quake will enable it again.
 				DisableQuakeTimer.Disable();

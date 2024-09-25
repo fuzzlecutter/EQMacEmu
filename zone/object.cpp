@@ -634,7 +634,7 @@ bool Object::HandleClick(Client* sender, const ClickObject_Struct* click_object)
 		if (sender->Admin() > 0)
 		{
 			std::string msg = "You can't interact with a tradeskill container as a GM. Yes. We thought of this one, too.";
-			sender->Message(CC_Red, msg.c_str());
+			sender->Message(Chat::Red, msg.c_str());
 			return false;
 		}
 

@@ -1065,7 +1065,7 @@ void SpawnConditionManager::ExecEvent(SpawnEvent &event, bool send_update) {
 
 	//now set the condition to the new value
 	if(send_update)	//full blown update
-		SetCondition(zone->GetShortName(), cond.condition_id, new_value);
+		SetCondition(zone->GetShortName(), zone->GetGuildID(), cond.condition_id, new_value);
 	else	//minor update done while loading
 		cond.value = new_value;
 }
@@ -1084,12 +1084,12 @@ void SpawnConditionManager::UpdateDBEvent(SpawnEvent &event) {
 	database.QueryDatabase(query);
 }
 
-void SpawnConditionManager::UpdateDBCondition(const char* zone_name, uint16 cond_id, int16 value) {
+void SpawnConditionManager::UpdateDBCondition(const char* zone_name, uint32 instance_id, uint16 cond_id, int16 value) {
 
 	std::string query = StringFormat("REPLACE INTO spawn_condition_values "
-                                    "(id, value, zone) "
-                                    "VALUES( %u, %u, '%s')",
-                                    cond_id, value, zone_name);
+                                    "(id, value, zone, instance_id) "
+                                    "VALUES( %u, %u, '%s', %lu)",
+                                    cond_id, value, zone_name, instance_id);
     database.QueryDatabase(query);
 }
 
@@ -1098,7 +1098,7 @@ bool SpawnConditionManager::LoadDBEvent(uint32 event_id, SpawnEvent &event, std:
     std::string query = StringFormat("SELECT id, cond_id, period, "
                                     "next_minute, next_hour, next_day, "
                                     "next_month, next_year, enabled, "
-                                    "action, argument, strict, zone "
+                                    "action, argument, strict, zone, instance_id "
                                     "FROM spawn_events WHERE id = %d", event_id);
     auto results = database.QueryDatabase(query);
     if (!results.Success()) {
@@ -1125,6 +1125,7 @@ bool SpawnConditionManager::LoadDBEvent(uint32 event_id, SpawnEvent &event, std:
     event.argument = atoi(row[10]);
     event.strict = atoi(row[11]) != 0;
     zone_name = row[12];
+	event.instance_id = atoi(row[13]);
 
     std::string timeAsString;
     EQTime::ToString(&event.next, timeAsString);
@@ -1134,7 +1135,7 @@ bool SpawnConditionManager::LoadDBEvent(uint32 event_id, SpawnEvent &event, std:
 	return true;
 }
 
-bool SpawnConditionManager::LoadSpawnConditions(const char* zone_name)
+bool SpawnConditionManager::LoadSpawnConditions(const char* zone_name, uint32 instance_id)
 {
 	//clear out old stuff..
 	spawn_conditions.clear();
@@ -1161,8 +1162,8 @@ bool SpawnConditionManager::LoadSpawnConditions(const char* zone_name)
 
 	//load values
 	query = StringFormat("SELECT id, value FROM spawn_condition_values "
-                        "WHERE zone = '%s'",
-                        zone_name);
+                        "WHERE zone = '%s' AND instance_id = %lu",
+                        zone_name, (unsigned long)instance_id);
     results = database.QueryDatabase(query);
     if (!results.Success()) {
 		spawn_conditions.clear();
@@ -1179,7 +1180,7 @@ bool SpawnConditionManager::LoadSpawnConditions(const char* zone_name)
 	//load spawn events
     query = StringFormat("SELECT id, cond_id, period, next_minute, next_hour, "
                         "next_day, next_month, next_year, enabled, action, argument, strict "
-                        "FROM spawn_events WHERE zone = '%s'", zone_name);
+                        "FROM spawn_events WHERE zone = '%s' AND instance_id = %lu", zone_name, (unsigned long)instance_id);
     results = database.QueryDatabase(query);
     if (!results.Success()) {
 		return false;
@@ -1238,7 +1239,7 @@ bool SpawnConditionManager::LoadSpawnConditions(const char* zone_name)
 
 		//If event is disabled, or we failed the strict check, set initial spawn_condition to 0.
 		if(!cevent.enabled || !StrictCheck)
-			SetCondition(zone->GetShortName(), cevent.condition_id,0);
+			SetCondition(zone->GetShortName(), zone->GetGuildID(), cevent.condition_id,0);
 
 		if(!cevent.enabled)
             continue;
@@ -1306,7 +1307,7 @@ void SpawnConditionManager::FindNearestEvent() {
 	}
 }
 
-void SpawnConditionManager::SetCondition(const char *zone_short, uint16 condition_id, int16 new_value, bool world_update)
+void SpawnConditionManager::SetCondition(const char *zone_short, uint32 instance_id, uint16 condition_id, int16 new_value, bool world_update)
 {
 	if(world_update) {
 		//this is an update coming from another zone, they
@@ -1335,7 +1336,7 @@ void SpawnConditionManager::SetCondition(const char *zone_short, uint16 conditio
 
 		//now we have to test each spawn point to see if it changed.
 		zone->SpawnConditionChanged(cond, old_value);
-	} else if(!strcasecmp(zone_short, zone->GetShortName()))
+	} else if(!strcasecmp(zone_short, zone->GetShortName()) && instance_id == zone->GetGuildID())
 	{
 		//this is a local spawn condition, we need to update the DB,
 		//our memory, then notify spawn points of the change.
@@ -1358,7 +1359,7 @@ void SpawnConditionManager::SetCondition(const char *zone_short, uint16 conditio
 		//set our local value
 		cond.value = new_value;
 		//save it in the DB too
-		UpdateDBCondition(zone_short, condition_id, new_value);
+		UpdateDBCondition(zone_short, instance_id, condition_id, new_value);
 
 		Log(Logs::Detail, Logs::Spawns, "Local Condition update requested for %d with value %d", condition_id, new_value);
 
@@ -1372,7 +1373,7 @@ void SpawnConditionManager::SetCondition(const char *zone_short, uint16 conditio
 
 		Log(Logs::Detail, Logs::Spawns, "Remote spawn condition %d set to %d. Updating DB and notifying world.", condition_id, new_value);
 
-		UpdateDBCondition(zone_short, condition_id, new_value);
+		UpdateDBCondition(zone_short, instance_id, condition_id, new_value);
 
 		auto pack = new ServerPacket(ServerOP_SpawnCondition, sizeof(ServerSpawnCondition_Struct));
 		ServerSpawnCondition_Struct* ssc = (ServerSpawnCondition_Struct*)pack->pBuffer;
@@ -1515,7 +1516,7 @@ void SpawnConditionManager::ToggleEvent(uint32 event_id, bool enabled, bool stri
 	safe_delete(pack);
 }
 
-int16 SpawnConditionManager::GetCondition(const char *zone_short, uint16 condition_id) {
+int16 SpawnConditionManager::GetCondition(const char *zone_short, uint32 instance_id, uint16 condition_id) {
 	if(!strcasecmp(zone_short, zone->GetShortName()))
 	{
 		//this is a local spawn condition
@@ -1534,8 +1535,8 @@ int16 SpawnConditionManager::GetCondition(const char *zone_short, uint16 conditi
 	//this is a remote spawn condition, grab it from the DB
     //load spawn conditions
     std::string query = StringFormat("SELECT value FROM spawn_condition_values "
-                                    "WHERE zone = '%s' AND id = %d",
-                                    zone_short, condition_id);
+                                    "WHERE zone = '%s' AND instance_id = %lu AND id = %d",
+                                    zone_short, (unsigned long)instance_id, condition_id);
     auto results = database.QueryDatabase(query);
     if (!results.Success()) {
         Log(Logs::Detail, Logs::Spawns, "Unable to query remote condition %d from zone %s in Get request.", condition_id, zone_short);

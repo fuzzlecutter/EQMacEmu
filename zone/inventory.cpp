@@ -358,8 +358,8 @@ void Client::CreateGroundObject(const EQ::ItemInstance* inst_in, glm::vec4 coord
 
 	if (zone && zone->GetGuildID() != GUILD_NONE)
 	{
-		auto broken_string = fmt::format("You cannot drop items in the ground. item {} (qty {} ).This item is eligible for reimbursement via petition at a cost of 100 platinum per item.", inst_in->GetID(), inst_in->GetCharges());
-		Message(CC_Red, broken_string.c_str());
+		auto broken_string = fmt::format("You cannot drop items in the ground. item {} (qty {} ).This item is eligible for reimbursement via petition at a cost of 1500 platinum per item.", inst_in->GetID(), inst_in->GetCharges());
+		Message(Chat::Red, broken_string.c_str());
 		if (RuleB(QueryServ, PlayerLogItemDesyncs))
 		{
 			QServ->QSItemDesyncs(CharacterID(), broken_string.c_str(), GetZoneID());
@@ -377,8 +377,8 @@ void Client::CreateGroundObject(const EQ::ItemInstance* inst_in, glm::vec4 coord
 	EQ::ItemInstance *inst = new EQ::ItemInstance(*inst_in);
 	if (inst->GetItem()->NoDrop == 0)
 	{
-		Message(CC_Red, "This item is NODROP. Deleting.");
-		auto msg = fmt::format("Dropped item is NODROP. Deleting. ({} {}) This item is eligible for reimbursement via petition at a cost of 100 platinum per item.", inst->GetCharges(), inst->GetItem()->Name);
+		Message(Chat::Red, "This item is NODROP. Deleting.");
+		auto msg = fmt::format("Dropped item is NODROP. Deleting. ({} {}) This item is eligible for reimbursement via petition at a cost of 1500 platinum per item.", inst->GetCharges(), inst->GetItem()->Name);
 		QServ->QSItemDesyncs(CharacterID(), msg.c_str(), GetZoneID());
 		Message(Chat::Red, msg.c_str());
 		if (inst->IsType(EQ::item::ItemClassBag))
@@ -388,7 +388,7 @@ void Client::CreateGroundObject(const EQ::ItemInstance* inst_in, glm::vec4 coord
 				const EQ::ItemInstance *bag_inst = inst->GetItem(sub_slot);
 				if (bag_inst)
 				{
-					msg = fmt::format("Dropped bag was NODROP. Deleting contents. ({} {}) This item is eligible for reimbursement via petition at a cost of 100 platinum per item.", bag_inst->GetCharges(), bag_inst->GetItem()->Name);
+					msg = fmt::format("Dropped bag was NODROP. Deleting contents. ({} {}) This item is eligible for reimbursement via petition at a cost of 1500 platinum per item.", bag_inst->GetCharges(), bag_inst->GetItem()->Name);
 					QServ->QSItemDesyncs(CharacterID(), msg.c_str(), GetZoneID());
 					Message(Chat::Red, msg.c_str());
 				}
@@ -404,7 +404,7 @@ void Client::CreateGroundObject(const EQ::ItemInstance* inst_in, glm::vec4 coord
 			const EQ::ItemInstance *bag_inst = inst->GetItem(sub_slot);
 			if (bag_inst && bag_inst->GetItem()->NoDrop == 0)
 			{
-				auto msg = fmt::format("Dropped bag contains item that is NODROP. Deleting. ({} {}) This item is eligible for reimbursement via petition at a cost of 100 platinum per item.", bag_inst->GetCharges(), bag_inst->GetItem()->Name);
+				auto msg = fmt::format("Dropped bag contains item that is NODROP. Deleting. ({} {}) This item is eligible for reimbursement via petition at a cost of 1500 platinum per item.", bag_inst->GetCharges(), bag_inst->GetItem()->Name);
 				Message(Chat::Red, msg.c_str());
 				inst->DeleteItem(sub_slot);
 			}
@@ -774,7 +774,7 @@ bool Client::PushItemOnCursorWithoutQueue(EQ::ItemInstance* inst, bool drop)
 				auto broken_string = fmt::format("Cursor queue full or item {} (qty {} ) is a duplicate. This item is eligible for reimbursement.", inst->GetID(), inst->GetCharges());
 				Log(Logs::General, Logs::Inventory, "Cursor queue has too many items or item %d (qty %d ) is a duplicate. It will be deleted.", inst->GetID(), inst->GetCharges());
 				if (RuleB(QueryServ, PlayerLogItemDesyncs)) { QServ->QSItemDesyncs(CharacterID(), broken_string.c_str(), GetZoneID()); }
-				Message(CC_Red, broken_string.c_str());
+				Message(Chat::Red, broken_string.c_str());
 				Log(Logs::General, Logs::Inventory, "Saving item %d to the cursor queue failed.", inst->GetID());
 			}
 			return false;
@@ -799,11 +799,23 @@ bool Client::PushItemOnCursorWithoutQueue(EQ::ItemInstance* inst, bool drop)
 				}
 				else
 				{
-					auto broken_string = fmt::format("Cursor queue full or item {} (qty {} ) is a duplicate. This item is eligible for reimbursement.", inst->GetID(), inst->GetCharges());
-					Log(Logs::General, Logs::Inventory, "Cursor queue has too many items or item %d (qty %d ) is a duplicate. It will be deleted.", inst->GetID(), inst->GetCharges());
-					if (RuleB(QueryServ, PlayerLogItemDesyncs)) { QServ->QSItemDesyncs(CharacterID(), broken_string.c_str(), GetZoneID()); }
-					Message(CC_Red, broken_string.c_str());
-					return false;
+					if (RuleB(Quarm, CursorAllowDuplicateItems)) {
+						if (m_inv.CursorSize() >= 10) {
+							auto broken_string = fmt::format("Cursor queue full. This item is eligible for reimbursement.");
+							Log(Logs::General, Logs::Inventory, "Cursor queue has too many items. It will be deleted.");
+							if (RuleB(QueryServ, PlayerLogItemDesyncs)) { QServ->QSItemDesyncs(CharacterID(), broken_string.c_str(), GetZoneID()); }
+							Message(Chat::Red, broken_string.c_str());
+							return false;
+						}
+					}
+					else
+					{
+						auto broken_string = fmt::format("Cursor queue full or item {} (qty {} ) is a duplicate. This item is eligible for reimbursement.", inst->GetID(), inst->GetCharges());
+						Log(Logs::General, Logs::Inventory, "Cursor queue has too many items or item %d (qty %d ) is a duplicate. It will be deleted.", inst->GetID(), inst->GetCharges());
+						if (RuleB(QueryServ, PlayerLogItemDesyncs)) { QServ->QSItemDesyncs(CharacterID(), broken_string.c_str(), GetZoneID()); }
+						Message(Chat::Red, broken_string.c_str());
+						return false;
+					}
 				}
 			}
 		}
@@ -817,7 +829,7 @@ bool Client::PushItemOnCursorWithoutQueue(EQ::ItemInstance* inst, bool drop)
 				auto broken_string = fmt::format("Cursor queue full or item {} (qty {} ) is a duplicate. This item is eligible for reimbursement.", inst->GetID(), inst->GetCharges());
 				Log(Logs::General, Logs::Inventory, "Cursor queue has too many items or item %d (qty %d ) is a duplicate. It will be deleted.", inst->GetID(), inst->GetCharges());
 				if (RuleB(QueryServ, PlayerLogItemDesyncs)) { QServ->QSItemDesyncs(CharacterID(), broken_string.c_str(), GetZoneID()); }
-				Message(CC_Red, broken_string.c_str());
+				Message(Chat::Red, broken_string.c_str());
 			}
 			return false;
 		}

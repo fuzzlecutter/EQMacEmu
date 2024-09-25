@@ -236,11 +236,11 @@ bool ZoneDatabase::LoadSpawnGroups(const char* zone_name, SpawnGroupList* spawn_
 			atoi(row[0]), 
 			row[1],
 			atoi(row[2]),
-			atof(row[3]),
-			atof(row[4]),
-			atof(row[5]),
-			atof(row[6]),
-			atof(row[7]),
+			(float)atof(row[3]),
+			(float)atof(row[4]),
+			(float)atof(row[5]),
+			(float)atof(row[6]),
+			atoi(row[7]),
 			atoi(row[8]),
 			atoi(row[9]),
 			atoi(row[10]),
@@ -317,7 +317,7 @@ bool ZoneDatabase::LoadSpawnGroupsByID(int spawngroupid, SpawnGroupList* spawn_g
     }
 
     for (auto row = results.begin(); row != results.end(); ++row) {
-        auto newSpawnGroup = std::make_unique<SpawnGroup>(atoi(row[0]), row[1], atoi(row[2]), atof(row[3]), atof(row[4]), atof(row[5]), atof(row[6]), atof(row[7]), atoi(row[8]), atoi(row[9]), atoi(row[10]), atoi(row[11]));
+        auto newSpawnGroup = std::make_unique<SpawnGroup>(atoi(row[0]), row[1], atoi(row[2]), (float)atof(row[3]), (float)atof(row[4]), (float)atof(row[5]), (float)atof(row[6]), atoi(row[7]), atoi(row[8]), atoi(row[9]), atoi(row[10]), atoi(row[11]));
         spawn_group_list->AddSpawnGroup(newSpawnGroup);
     }
 

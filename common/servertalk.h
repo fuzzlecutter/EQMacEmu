@@ -439,6 +439,7 @@ struct RezzPlayer_Struct {
 	uint16	rezzopcode;
 	uint32	corpse_zone_id;
 	uint32	corpse_zone_guild_id;
+	uint32	corpse_character_id;
 	//char	packet[160];
 	Resurrect_Struct rez;
 };

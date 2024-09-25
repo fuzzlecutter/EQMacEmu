@@ -71,7 +71,7 @@ void command_corpse(Client *c, const Seperator *sep)
 				return;
 			}
 
-			Corpse* PlayerCorpse = database.SummonBuriedCharacterCorpses(t->CharacterID(), t->GetZoneID(), t->GetPosition());
+			Corpse* PlayerCorpse = database.SummonBuriedCharacterCorpses(t->CharacterID(), t->GetZoneID(), zone->GetGuildID(), t->GetPosition());
 
 			if (!PlayerCorpse)
 				c->Message(Chat::White, "Your target doesn't have any buried corpses.");
@@ -310,7 +310,7 @@ void command_corpse(Client *c, const Seperator *sep)
 			{
 				if(database.CopyBackupCorpse(corpseid))
 				{
-					Corpse* PlayerCorpse = database.SummonCharacterCorpse(corpseid, t->CharacterID(), t->GetZoneID(), t->GetPosition());
+					Corpse* PlayerCorpse = database.SummonCharacterCorpse(corpseid, t->CharacterID(), t->GetZoneID(), zone->GetGuildID(), t->GetPosition());
 
 					if (!PlayerCorpse)
 						c->Message(Chat::White, "Summoning of backup corpse failed. Please escalate this issue.");

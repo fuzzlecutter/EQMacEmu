@@ -1021,15 +1021,6 @@ void EntityList::AESpell(Mob *caster, Mob *center, uint16 spell_id, bool affect_
 	if (caster->IsNPC())
 		MAX_TARGETS_ALLOWED = 999;
 
-	if (caster->IsClient())
-	{
-		if (caster->CastToClient()->Admin() == 0 && entity_list.GetClientCount() >= RuleI(Quarm, AOEThrottlingMaxClients))
-		{
-			MAX_TARGETS_ALLOWED = RuleI(Quarm, AOEThrottlingMaxAOETargets);
-			limit_all_aoes = true;
-		}
-	}
-
 	if (!caster->IsNPC() && HasDirectDamageEffect(spell_id))
 	{
 		// Damage Spells were limited to 4 targets.
@@ -1049,10 +1040,15 @@ void EntityList::AESpell(Mob *caster, Mob *center, uint16 spell_id, bool affect_
 		}
 	}
 
-
-	if (!caster->IsNPC() && !limit_all_aoes && IsDetrimentalSpell(spell_id) && spells[spell_id].targettype == ST_AECaster && RuleB(Quarm, LimitPBAOEDetrimentalSpells))
+	if (!caster->IsNPC() && IsDetrimentalSpell(spell_id) && spells[spell_id].targettype == ST_AECaster && RuleB(Quarm, LimitPBAOEDetrimentalSpells))
 	{
 		MAX_TARGETS_ALLOWED = RuleI(Quarm, AOEMaxHostilePBAOETargets);
+		limit_all_aoes = true;
+	}
+	
+	if (caster->IsClient() && caster->CastToClient()->Admin() == 0 && MAX_TARGETS_ALLOWED > RuleI(Quarm, AOEThrottlingMaxAOETargets) && entity_list.GetClientCount() >= RuleI(Quarm, AOEThrottlingMaxClients))
+	{
+		MAX_TARGETS_ALLOWED = RuleI(Quarm, AOEThrottlingMaxAOETargets);
 		limit_all_aoes = true;
 	}
 
@@ -1129,9 +1125,25 @@ void EntityList::AESpell(Mob *caster, Mob *center, uint16 spell_id, bool affect_
 		}
 
 		if (detrimental) {
-			// aoe spells do hit other players except if in same raid or group.  their pets get hit even when grouped.  SpellOnTarget checks pvp protection
-			if (caster != curmob && (caster->InSameGroup(curmob) || caster->InSameRaid(curmob)))
-				continue;
+			// aoe spells do hit other players except if in same raid or group, raid pets are also excluded.  non-raid, group pets get hit.  SpellOnTarget checks pvp protection
+			if (caster != curmob) {
+				// Log(Logs::Detail, Logs::Spells, "PB AE Spell: %d detrimental and not caster, evaluating target %s", spell_id, curmob->GetName());
+				if (caster->InSameGroup(curmob))
+				{
+					Log(Logs::Detail, Logs::Spells, "PB AE Spell: %d won't hit group member %s", spell_id, curmob->GetName());
+					continue;
+				}
+				else if (caster->InSameRaid(curmob)) 
+				{
+					Log(Logs::Detail, Logs::Spells, "PB AE Spell: %d won't hit raid member %s", spell_id, curmob->GetName());
+					continue;
+				}
+				else if (curmob->GetOwner() && caster->InSameRaid(curmob->GetOwner())) 
+				{
+					Log(Logs::Detail, Logs::Spells, "PB AE Spell: %d won't hit raid member pet %s", spell_id, curmob->GetName());
+					continue;
+				}		
+			}
 
 			if (!zone->SkipLoS() && !spells[spell_id].npc_no_los && curmob != caster && !center->CheckLosFN(curmob, true))
 				continue;
@@ -1197,7 +1209,7 @@ void EntityList::AESpell(Mob *caster, Mob *center, uint16 spell_id, bool affect_
 				caster->SpellOnTarget(spell_id, curmob, false, true, resist_adjust, false, ae_caster_id);
 				if (curmob->IsNPC() && caster->IsAttackAllowed(curmob, true, spell_id))
 					++targets_hit;
-				Log(Logs::Detail, Logs::Spells, "Targeted AE Spell: %d has hit target #%d/%d: %s", spell_id, targets_hit, MAX_TARGETS_ALLOWED, curmob->GetCleanName());
+				LogSpellsDetail("Targeted AE Spell: {} has hit target #{}/{}: {}", spell_id, targets_hit, MAX_TARGETS_ALLOWED, curmob->GetCleanName());
 			}
 			else if (targets_hit >= MAX_TARGETS_ALLOWED)
 			{
@@ -1212,7 +1224,7 @@ void EntityList::AESpell(Mob *caster, Mob *center, uint16 spell_id, bool affect_
 				caster->SpellOnTarget(spell_id, curmob, false, true, resist_adjust, false, ae_caster_id);
 				if (curmob->IsNPC() && caster->IsAttackAllowed(curmob, true, spell_id))
 					++targets_hit;
-				Log(Logs::Moderate, Logs::Spells, "Bard Damaging AE Spell: %d has hit target #%d/%d: %s", spell_id, targets_hit, bard_aoe_cap, curmob->GetCleanName());
+				LogSpellsDetail("Bard Damaging AE Spell: {} has hit target #{}/{}: {}", spell_id, targets_hit, bard_aoe_cap, curmob->GetCleanName());
 			}
 			else if(targets_hit >= bard_aoe_cap)
 			{
@@ -1223,17 +1235,17 @@ void EntityList::AESpell(Mob *caster, Mob *center, uint16 spell_id, bool affect_
 		{
 			if (curmob->IsClient() && curmob->CastToClient()->GetHideMe())
 			{
-				Log(Logs::Moderate, Logs::Spells, "Non-limited AE Spell: Skipping GM %s with spell %i", curmob->GetCleanName(), spell_id);
+				LogSpellsDetail("PB AE Spell: Skipping GM {} with spell {}", curmob->GetCleanName(), spell_id);
 			}
 			else
 			{
-				Log(Logs::Moderate, Logs::Spells, "Non-limited AE Spell: %d has hit target %s", spell_id, curmob->GetCleanName());
+				LogSpellsDetail("PB AE Spell: {} has hit target {} [#{}/{}]", spell_id, curmob->GetCleanName(), targets_hit + 1, MAX_TARGETS_ALLOWED);
 				caster->SpellOnTarget(spell_id, curmob, false, true, resist_adjust, false, ae_caster_id);
 				if (limit_all_aoes)
 				{
-
 					if(curmob->IsNPC())
 						++targets_hit;
+
 					if (targets_hit >= MAX_TARGETS_ALLOWED)
 						break;
 				}

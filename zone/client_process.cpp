@@ -986,7 +986,7 @@ void Client::BulkSendMerchantInventory(int merchant_id, int npcid)
 					if (inst)
 					{
 						std::string packet(inst->Serialize(ml.slot - 1));
-						Log(Logs::Moderate, Logs::Trading, "PERM (%d): %s was added to merchant in slot %d with price %d", i, item->Name, ml.slot, inst->GetPrice());
+						Log(Logs::Detail, Logs::Trading, "PERM (%d): %s was added to merchant in slot %d with price %d", i, item->Name, ml.slot, inst->GetPrice());
 						ser_items[m] = packet;
 						size += packet.length();
 						m++;
@@ -1025,7 +1025,7 @@ void Client::BulkSendMerchantInventory(int merchant_id, int npcid)
 							size += packet.length();
 							m++;
 						}
-						Log(Logs::Moderate, Logs::Trading, "TEMP (%d): %s was added to merchant in slot %d with %d count and %d charges and price %d", i, item->Name, ml.slot, capped_charges, charges, inst->GetPrice());
+						Log(Logs::Detail, Logs::Trading, "TEMP (%d): %s was added to merchant in slot %d with %d count and %d charges and price %d", i, item->Name, ml.slot, capped_charges, charges, inst->GetPrice());
 					}
 				}
 				tmp_merlist.push_back(ml);
@@ -1034,7 +1034,7 @@ void Client::BulkSendMerchantInventory(int merchant_id, int npcid)
 				// 80 inventory slots + 10 "hidden" items.
 				if (i > 89)
 				{
-					Log(Logs::Moderate, Logs::Trading, "Item at position %d is not being added.", i);
+					Log(Logs::Detail, Logs::Trading, "Item at position %d is not being added.", i);
 					break;
 				}
 			}
@@ -1065,7 +1065,7 @@ void Client::BulkSendMerchantInventory(int merchant_id, int npcid)
 						size += packet.length();
 						m++;
 					}
-					Log(Logs::Moderate, Logs::Trading, "TEMP (%d): %s was added to merchant in slot %d with %d count and %d charges and price %d", i, item->Name, ml.slot, capped_charges, charges, inst->GetPrice());
+					Log(Logs::Detail, Logs::Trading, "TEMP (%d): %s was added to merchant in slot %d with %d count and %d charges and price %d", i, item->Name, ml.slot, capped_charges, charges, inst->GetPrice());
 				}
 			}
 			tmp_merlist.push_back(ml);
@@ -1074,7 +1074,7 @@ void Client::BulkSendMerchantInventory(int merchant_id, int npcid)
 			// 80 inventory slots + 10 "hidden" items.
 			if (i > 80)
 			{
-				Log(Logs::Moderate, Logs::Trading, "Item at position %d is not being added.", i);
+				Log(Logs::Detail, Logs::Trading, "Item at position %d is not being added.", i);
 				break;
 			}
 		}

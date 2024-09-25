@@ -39,10 +39,10 @@ public:
 		int8_t      group_;
 		int8_t      despawn_when_triggered;
 		int8_t      undetectable;
-		std::string content_flags;
-		std::string content_flags_disabled;
 		float       min_expansion;
 		float       max_expansion;
+		std::string content_flags;
+		std::string content_flags_disabled;
 	};
 
 	static std::string PrimaryKey()
@@ -73,10 +73,10 @@ public:
 			"`group`",
 			"despawn_when_triggered",
 			"undetectable",
-			"content_flags",
-			"content_flags_disabled",
 			"min_expansion",
 			"max_expansion",
+			"content_flags",
+			"content_flags_disabled",
 		};
 	}
 
@@ -103,10 +103,10 @@ public:
 			"`group`",
 			"despawn_when_triggered",
 			"undetectable",
-			"content_flags",
-			"content_flags_disabled",
 			"min_expansion",
 			"max_expansion",
+			"content_flags",
+			"content_flags_disabled",
 		};
 	}
 
@@ -167,10 +167,10 @@ public:
 		e.group_                 = 0;
 		e.despawn_when_triggered = 0;
 		e.undetectable           = 0;
-		e.content_flags          = "";
-		e.content_flags_disabled = "";
 		e.min_expansion          = -1;
 		e.max_expansion          = -1;
+		e.content_flags          = "";
+		e.content_flags_disabled = "";
 
 		return e;
 	}
@@ -227,10 +227,10 @@ public:
 			e.group_                 = row[17] ? static_cast<int8_t>(atoi(row[17])) : 0;
 			e.despawn_when_triggered = row[18] ? static_cast<int8_t>(atoi(row[18])) : 0;
 			e.undetectable           = row[19] ? static_cast<int8_t>(atoi(row[19])) : 0;
-			e.content_flags          = row[20] ? row[20] : "";
-			e.content_flags_disabled = row[21] ? row[21] : "";
-			e.min_expansion          = row[22] ? strtof(row[22], nullptr) : -1;
-			e.max_expansion          = row[23] ? strtof(row[23], nullptr) : -1;
+			e.min_expansion          = row[20] ? strtof(row[20], nullptr) : -1;
+			e.max_expansion          = row[21] ? strtof(row[21], nullptr) : -1;
+			e.content_flags          = row[22] ? row[22] : "";
+			e.content_flags_disabled = row[23] ? row[23] : "";
 
 			return e;
 		}
@@ -283,10 +283,10 @@ public:
 		v.push_back(columns[17] + " = " + std::to_string(e.group_));
 		v.push_back(columns[18] + " = " + std::to_string(e.despawn_when_triggered));
 		v.push_back(columns[19] + " = " + std::to_string(e.undetectable));
-		v.push_back(columns[20] + " = '" + Strings::Escape(e.content_flags) + "'");
-		v.push_back(columns[21] + " = '" + Strings::Escape(e.content_flags_disabled) + "'");
-		v.push_back(columns[22] + " = " + std::to_string(e.min_expansion));
-		v.push_back(columns[23] + " = " + std::to_string(e.max_expansion));
+		v.push_back(columns[20] + " = " + std::to_string(e.min_expansion));
+		v.push_back(columns[21] + " = " + std::to_string(e.max_expansion));
+		v.push_back(columns[22] + " = '" + Strings::Escape(e.content_flags) + "'");
+		v.push_back(columns[23] + " = '" + Strings::Escape(e.content_flags_disabled) + "'");
 
 		auto results = db.QueryDatabase(
 			fmt::format(
@@ -328,10 +328,10 @@ public:
 		v.push_back(std::to_string(e.group_));
 		v.push_back(std::to_string(e.despawn_when_triggered));
 		v.push_back(std::to_string(e.undetectable));
-		v.push_back("'" + Strings::Escape(e.content_flags) + "'");
-		v.push_back("'" + Strings::Escape(e.content_flags_disabled) + "'");
 		v.push_back(std::to_string(e.min_expansion));
 		v.push_back(std::to_string(e.max_expansion));
+		v.push_back("'" + Strings::Escape(e.content_flags) + "'");
+		v.push_back("'" + Strings::Escape(e.content_flags_disabled) + "'");
 
 		auto results = db.QueryDatabase(
 			fmt::format(
@@ -381,10 +381,10 @@ public:
 			v.push_back(std::to_string(e.group_));
 			v.push_back(std::to_string(e.despawn_when_triggered));
 			v.push_back(std::to_string(e.undetectable));
-			v.push_back("'" + Strings::Escape(e.content_flags) + "'");
-			v.push_back("'" + Strings::Escape(e.content_flags_disabled) + "'");
 			v.push_back(std::to_string(e.min_expansion));
 			v.push_back(std::to_string(e.max_expansion));
+			v.push_back("'" + Strings::Escape(e.content_flags) + "'");
+			v.push_back("'" + Strings::Escape(e.content_flags_disabled) + "'");
 
 			insert_chunks.push_back("(" + Strings::Implode(",", v) + ")");
 		}
@@ -438,10 +438,10 @@ public:
 			e.group_                 = row[17] ? static_cast<int8_t>(atoi(row[17])) : 0;
 			e.despawn_when_triggered = row[18] ? static_cast<int8_t>(atoi(row[18])) : 0;
 			e.undetectable           = row[19] ? static_cast<int8_t>(atoi(row[19])) : 0;
-			e.content_flags          = row[20] ? row[20] : "";
-			e.content_flags_disabled = row[21] ? row[21] : "";
-			e.min_expansion          = row[22] ? strtof(row[22], nullptr) : -1;
-			e.max_expansion          = row[23] ? strtof(row[23], nullptr) : -1;
+			e.min_expansion          = row[20] ? strtof(row[20], nullptr) : -1;
+			e.max_expansion          = row[21] ? strtof(row[21], nullptr) : -1;
+			e.content_flags          = row[22] ? row[22] : "";
+			e.content_flags_disabled = row[23] ? row[23] : "";
 
 			all_entries.push_back(e);
 		}
@@ -486,10 +486,10 @@ public:
 			e.group_                 = row[17] ? static_cast<int8_t>(atoi(row[17])) : 0;
 			e.despawn_when_triggered = row[18] ? static_cast<int8_t>(atoi(row[18])) : 0;
 			e.undetectable           = row[19] ? static_cast<int8_t>(atoi(row[19])) : 0;
-			e.content_flags          = row[20] ? row[20] : "";
-			e.content_flags_disabled = row[21] ? row[21] : "";
-			e.min_expansion          = row[22] ? strtof(row[22], nullptr) : -1;
-			e.max_expansion          = row[23] ? strtof(row[23], nullptr) : -1;
+			e.min_expansion          = row[20] ? strtof(row[20], nullptr) : -1;
+			e.max_expansion          = row[21] ? strtof(row[21], nullptr) : -1;
+			e.content_flags          = row[22] ? row[22] : "";
+			e.content_flags_disabled = row[23] ? row[23] : "";
 
 			all_entries.push_back(e);
 		}

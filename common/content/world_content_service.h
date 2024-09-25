@@ -71,17 +71,17 @@ public:
 	float GetCurrentExpansion() const;
 	void SetCurrentExpansion(float current_expansion);
 
-	bool IsClassicEnabled() { return GetCurrentExpansion() >= Expansion::ExpansionNumber::Classic || GetCurrentExpansion() == Expansion::EXPANSION_ALL; }
-	bool IsTheRuinsOfKunarkEnabled() { return GetCurrentExpansion() >= Expansion::ExpansionNumber::TheRuinsOfKunark || GetCurrentExpansion() == Expansion::EXPANSION_ALL; }
-	bool IsTheScarsOfVeliousEnabled() { return GetCurrentExpansion() >= Expansion::ExpansionNumber::TheScarsOfVelious || GetCurrentExpansion() == Expansion::EXPANSION_ALL; }
-	bool IsTheShadowsOfLuclinEnabled() { return GetCurrentExpansion() >= Expansion::ExpansionNumber::TheShadowsOfLuclin || GetCurrentExpansion() == Expansion::EXPANSION_ALL; }
-	bool IsThePlanesOfPowerEnabled() { return GetCurrentExpansion() >= Expansion::ExpansionNumber::ThePlanesOfPower || GetCurrentExpansion() == Expansion::EXPANSION_ALL; }
+	bool IsClassicEnabled() { return (int)floor(GetCurrentExpansion()) >= (int)Expansion::ExpansionNumber::Classic || (int)floor(GetCurrentExpansion()) == (int)Expansion::EXPANSION_ALL; }
+	bool IsTheRuinsOfKunarkEnabled() { return (int)floor(GetCurrentExpansion()) >= (int)Expansion::ExpansionNumber::TheRuinsOfKunark || (int)floor(GetCurrentExpansion()) == (int)Expansion::EXPANSION_ALL; }
+	bool IsTheScarsOfVeliousEnabled() { return (int)floor(GetCurrentExpansion()) >= (int)Expansion::ExpansionNumber::TheScarsOfVelious || (int)floor(GetCurrentExpansion()) == (int)Expansion::EXPANSION_ALL; }
+	bool IsTheShadowsOfLuclinEnabled() { return (int)floor(GetCurrentExpansion()) >= (int)Expansion::ExpansionNumber::TheShadowsOfLuclin || (int)floor(GetCurrentExpansion()) == (int)Expansion::EXPANSION_ALL; }
+	bool IsThePlanesOfPowerEnabled() { return (int)floor(GetCurrentExpansion()) >= (int)Expansion::ExpansionNumber::ThePlanesOfPower || (int)floor(GetCurrentExpansion()) == (int)Expansion::EXPANSION_ALL; }
 
-	bool IsCurrentExpansionClassic() { return current_expansion == Expansion::ExpansionNumber::Classic; }
-	bool IsCurrentExpansionTheRuinsOfKunark() { return current_expansion == Expansion::ExpansionNumber::TheRuinsOfKunark; }
-	bool IsCurrentExpansionTheScarsOfVelious() { return current_expansion == Expansion::ExpansionNumber::TheScarsOfVelious; }
-	bool IsCurrentExpansionTheShadowsOfLuclin() { return current_expansion == Expansion::ExpansionNumber::TheShadowsOfLuclin; }
-	bool IsCurrentExpansionThePlanesOfPower() { return current_expansion == Expansion::ExpansionNumber::ThePlanesOfPower; }
+	bool IsCurrentExpansionClassic() { return (int)floor(current_expansion) == (int)Expansion::ExpansionNumber::Classic; }
+	bool IsCurrentExpansionTheRuinsOfKunark() { return (int)floor(current_expansion) == (int)Expansion::ExpansionNumber::TheRuinsOfKunark; }
+	bool IsCurrentExpansionTheScarsOfVelious() { return (int)floor(current_expansion) == (int)Expansion::ExpansionNumber::TheScarsOfVelious; }
+	bool IsCurrentExpansionTheShadowsOfLuclin() { return (int)floor(current_expansion) == (int)Expansion::ExpansionNumber::TheShadowsOfLuclin; }
+	bool IsCurrentExpansionThePlanesOfPower() { return (int)floor(current_expansion) == (int)Expansion::ExpansionNumber::ThePlanesOfPower; }
 
 	const std::vector<ContentFlagsRepository::ContentFlags> &GetContentFlags() const;
 	std::vector<std::string> GetContentFlagsEnabled();

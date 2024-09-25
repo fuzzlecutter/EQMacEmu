@@ -921,7 +921,7 @@ void Client::ChannelMessageReceived(uint8 chan_num, uint8 language, uint8 lang_s
 	case ChatChannel_Guild: { /* Guild Chat */
 		if (GetRevoked() == 2)
 		{
-			Message(CC_Default, "You have been muted. You may not talk on Guild.");
+			Message(Chat::Default, "You have been muted. You may not talk on Guild.");
 			return;
 		}
 
@@ -937,7 +937,7 @@ void Client::ChannelMessageReceived(uint8 chan_num, uint8 language, uint8 lang_s
 
 		if (GetRevoked() == 2)
 		{
-			Message(CC_Default, "You have been muted. You may not talk on Group.");
+			Message(Chat::Default, "You have been muted. You may not talk on Group.");
 			return;
 		}
 		Raid* raid = entity_list.GetRaidByClient(this);
@@ -956,7 +956,7 @@ void Client::ChannelMessageReceived(uint8 chan_num, uint8 language, uint8 lang_s
 		Raid* raid = entity_list.GetRaidByClient(this);
 		if (GetRevoked() == 2)
 		{
-			Message(CC_Default, "You have been muted. You may not talk on Raid Say.");
+			Message(Chat::Default, "You have been muted. You may not talk on Raid Say.");
 			return;
 		}
 
@@ -969,7 +969,7 @@ void Client::ChannelMessageReceived(uint8 chan_num, uint8 language, uint8 lang_s
 		Mob *sender = this;
 		if (GetRevoked())
 		{
-			Message(CC_Default, "You have been muted. You may not talk on Shout.");
+			Message(Chat::Default, "You have been muted. You may not talk on Shout.");
 			return;
 		}
 		entity_list.ChannelMessage(sender, chan_num, language, lang_skill, message);
@@ -1009,7 +1009,7 @@ void Client::ChannelMessageReceived(uint8 chan_num, uint8 language, uint8 lang_s
 
 			if (GetRevoked())
 			{
-				Message(CC_Default, "You have been revoked. You may not send Auction messages.");
+				Message(Chat::Default, "You have been revoked. You may not send Auction messages.");
 				return;
 			}
 
@@ -1056,7 +1056,7 @@ void Client::ChannelMessageReceived(uint8 chan_num, uint8 language, uint8 lang_s
 			Mob *sender = this;
 			if (GetRevoked())
 			{
-				Message(CC_Default, "You have been revoked. You may not talk in Out Of Character.");
+				Message(Chat::Default, "You have been revoked. You may not talk in Out Of Character.");
 				return;
 			}
 
@@ -1129,7 +1129,7 @@ void Client::ChannelMessageReceived(uint8 chan_num, uint8 language, uint8 lang_s
 	}
 	case ChatChannel_Say: { /* Say */
 		if(message[0] == COMMAND_CHAR) {
-			if (command_dispatch(this, message, false) == -2) {
+			if (command_dispatch(this, message) == -2) {
 				if(parse->PlayerHasQuestSub(EVENT_COMMAND)) {
 					int i = parse->EventPlayer(EVENT_COMMAND, this, message, 0);
 					if(i == 0 && !RuleB(Chat, SuppressCommandErrors)) {
@@ -1148,7 +1148,7 @@ void Client::ChannelMessageReceived(uint8 chan_num, uint8 language, uint8 lang_s
 			sender = GetPet();
 		if (GetRevoked())
 		{
-			Message(CC_Default, "You have been revoked. You may not talk on say, except to NPCs directly.");
+			Message(Chat::Default, "You have been revoked. You may not talk on say, except to NPCs directly.");
 		}
 		else
 		{
@@ -1673,14 +1673,14 @@ void Client::SetTemporaryLastName(char* in_lastname) {
 	}
 
 	if (strlen(in_lastname) >= 20) {
-		Message_StringID(CC_Yellow, SURNAME_TOO_LONG);
+		Message_StringID(Chat::Yellow, SURNAME_TOO_LONG);
 		return;
 	}
 
 
 	if (in_lastname[0] != 0 && !database.CheckNameFilter(in_lastname, true))
 	{
-		Message_StringID(CC_Red, SURNAME_REJECTED);
+		Message_StringID(Chat::Red, SURNAME_REJECTED);
 		return;
 	}
 
@@ -2498,7 +2498,7 @@ bool Client::BindWound(uint16 bindmob_id, bool start, bool fail)
 				msg = "The player's Self Found flag does not match yours. You cannot bind wound.";
 			}
 			if (!msg.empty()) {
-				this->Message(CC_Red, msg.c_str());
+				this->Message(Chat::Red, msg.c_str());
 				// DO NOT CHANGE - any other packet order will cause client bugs / crashes.
 				bind_out->type = 3;
 				QueuePacket(outapp);
@@ -4729,6 +4729,18 @@ int32 Client::UpdatePersonalFaction(int32 char_id, int32 npc_value, int32 factio
 
 	if (hit != 0)
 	{	
+		if (RuleB(Quarm, ClientFactionOverride))
+		{
+			const float factionMultiplier = RuleR(Quarm, ClientFactionMultiplier);
+			
+			// We should not support sign flipping or zeroing out faction as this could have undetermined ramifications
+			if (factionMultiplier > 0)
+			{
+				Log(Logs::Detail, Logs::Faction, "Faction Multiplier %0.2f applied to faction %d for %s.", factionMultiplier, faction_id, GetName());
+				hit *= factionMultiplier;
+			}
+		}
+		
 		int16 min_personal_faction = database.MinFactionCap(faction_id);
 		int16 max_personal_faction = database.MaxFactionCap(faction_id);
 		int32 personal_faction = GetCharacterFactionLevel(faction_id);
@@ -6590,10 +6602,10 @@ void Client::RevokeSelf()
 	if (GetRevoked())
 		return;
 
-	Message(CC_Red, "You have been server muted for %i seconds for violating the anti-spam filter.", RuleI(Quarm, AntiSpamMuteInSeconds));
+	Message(Chat::Red, "You have been server muted for %i seconds for violating the anti-spam filter.", RuleI(Quarm, AntiSpamMuteInSeconds));
 
 	std::string warped = "GM Alert: [" + std::string(GetCleanName()) + "] has violated the anti-spam filter.";
-	worldserver.SendEmoteMessage(0, 0, 100, CC_Default, "%s", warped.c_str());
+	worldserver.SendEmoteMessage(0, 0, 100, Chat::Default, "%s", warped.c_str());
 
 	std::string query = StringFormat("UPDATE account SET revoked = 1 WHERE id = %i", AccountID());
 	SetRevoked(1);
@@ -6609,26 +6621,26 @@ void Client::ShowLegacyItemsLooted(Client* to)
 	if (!to)
 		return;
 
-	to->Message(CC_Yellow, "Showing all legacy loot lockouts / items for %s..", GetCleanName());
-	to->Message(CC_Yellow, "======");
-	to->Message(CC_Yellow, "Legacy Item Flags On Character:");
+	to->Message(Chat::Yellow, "Showing all legacy loot lockouts / items for %s..", GetCleanName());
+	to->Message(Chat::Yellow, "======");
+	to->Message(Chat::Yellow, "Legacy Item Flags On Character:");
 	for(auto looted_legacy_item : looted_legacy_items)
 	{
 		const EQ::ItemData* itemdata = database.GetItem(looted_legacy_item.first);
 		if (itemdata)
 		{
-			to->Message(CC_Yellow, "ID %d : Name %s, Expiry: %s", itemdata->ID, itemdata->Name, Strings::SecondsToTime(looted_legacy_item.second.expirydate).c_str());
+			to->Message(Chat::Yellow, "ID %d : Name %s, Expiry: %s", itemdata->ID, itemdata->Name, Strings::SecondsToTime(looted_legacy_item.second.expirydate).c_str());
 		}
 	}
-	to->Message(CC_Yellow, "======");
-	to->Message(CC_Yellow, "Legacy Items On Character:");
+	to->Message(Chat::Yellow, "======");
+	to->Message(Chat::Yellow, "Legacy Items On Character:");
 	
 	std::string query = StringFormat("SELECT id, name FROM items "
 		"WHERE legacy_item = 1 ORDER BY id", character_id);
 	auto results = database.QueryDatabase(query);
 	if (!results.Success()) {
 
-		to->Message(CC_Yellow, "======");
+		to->Message(Chat::Yellow, "======");
 		return;
 	}
 
@@ -6690,12 +6702,12 @@ void Client::ShowLegacyItemsLooted(Client* to)
 				const EQ::ItemData* item_data = database.GetItem(itemids.first);
 				if (item_data)
 				{
-					to->Message(CC_Yellow, "ID %d || Name %s || Quantity %d ", item_data->ID, item_data->Name, itr3->second);
+					to->Message(Chat::Yellow, "ID %d || Name %s || Quantity %d ", item_data->ID, item_data->Name, itr3->second);
 				}
 			}
 		}
 	}	
-	to->Message(CC_Yellow, "======");
+	to->Message(Chat::Yellow, "======");
 
 }
 
@@ -6712,6 +6724,17 @@ bool Client::IsLootLockedOutOfNPC(uint32 npctype_id)
 	return false;
 };
 
+std::string Client::GetSSFLooterName() {
+	std::string appendedCharName = GetCleanName();
+	if (IsSelfFound())
+		appendedCharName += "-SF";
+
+	if (IsSoloOnly())
+		appendedCharName += "-Solo";
+
+	return appendedCharName;
+}
+
 std::vector<int> Client::GetMemmedSpells() {
 	std::vector<int> memmed_spells;
 	for (int index = 0; index < EQ::spells::SPELL_GEM_COUNT; index++) {
@@ -6724,7 +6747,9 @@ std::vector<int> Client::GetMemmedSpells() {
 
 std::vector<int> Client::GetScribeableSpells(uint8 min_level, uint8 max_level) {
 	bool SpellGlobalRule = RuleB(Spells, EnableSpellGlobals);
+	bool SpellBucketRule = RuleB(Spells, EnableSpellBuckets);
 	bool SpellGlobalCheckResult = false;
+	bool SpellBucketCheckResult = false;
 	std::vector<int> scribeable_spells;
 	for (int spell_id = 0; spell_id < SPDAT_RECORDS; ++spell_id) {
 		bool scribeable = false;
@@ -6746,6 +6771,12 @@ std::vector<int> Client::GetScribeableSpells(uint8 min_level, uint8 max_level) {
 		if (SpellGlobalRule) {
 			SpellGlobalCheckResult = SpellGlobalCheck(spell_id, CharacterID());
 			if (SpellGlobalCheckResult) {
+				scribeable = true;
+			}
+		}
+		else if (SpellBucketRule) {
+			SpellBucketCheckResult = SpellBucketCheck(spell_id, CharacterID());
+			if (SpellBucketCheckResult) {
 				scribeable = true;
 			}
 		}
@@ -6917,25 +6948,25 @@ void Client::SetCharExportFlag(uint8 flag)
 	if (flag == 0) {
 		m_epp.char_export_flag = 0;
 		Save(1);
-		Message(CC_Default, "Character export disabled.");
+		Message(Chat::Default, "Character export disabled.");
 		return;
 	}
 	else if (flag == 1) {
 		m_epp.char_export_flag = 1;
 		Save(1);
-		Message(CC_Default, "Character \"worn\" export enabled.");
+		Message(Chat::Default, "Character \"worn\" export enabled.");
 		return;
 	}
 	else if (flag == 2) {
 		m_epp.char_export_flag = 2;
 		Save(1);
-		Message(CC_Default, "Character \"inventory\" export enabled.");
+		Message(Chat::Default, "Character \"inventory\" export enabled.");
 		return;
 	}
 	else if (flag == 3) {
 		m_epp.char_export_flag = 3;
 		Save(1);
-		Message(CC_Default, "Character \"bank\" export enabled.");
+		Message(Chat::Default, "Character \"bank\" export enabled.");
 		return;
 	}
 }
@@ -7039,5 +7070,5 @@ void Client::PermaGender(uint32 gender)
 }
 
 bool Client::SendGMCommand(std::string message, bool ignore_status) {
-	return command_dispatch(this, message, ignore_status) >= 0 ? true : false;
+	return command_dispatch(this, message.c_str()) >= 0 ? true : false;
 }

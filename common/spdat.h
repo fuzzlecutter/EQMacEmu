@@ -44,6 +44,10 @@
 #define SPELL_GREENMIST 1363
 #define SPELL_MODULATION 1502
 #define SPELL_TORPOR 1576
+#define SPELL_WIND_OF_THE_NORTH 1736
+#define SPELL_WIND_OF_THE_SOUTH 1737
+#define SPELL_TISHANS_RELOCATION 1738
+#define SPELL_MARKARS_RELOCATION 1739
 #define SPELL_CALL_OF_THE_HERO 1771
 #define SPELL_MANIFEST_ELEMENTS 1936
 #define SPELL_MANABURN 2751
@@ -639,6 +643,7 @@ extern int32 SPDAT_RECORDS;
 
 bool IsTargetableAESpell(uint16 spell_id);
 bool IsSacrificeSpell(uint16 spell_id);
+bool IsLichSpell(uint16 spell_id);
 bool IsLifetapSpell(uint16 spell_id);
 bool IsMezSpell(uint16 spell_id);
 int16 GetBaseValue(uint16 spell_id, uint16 effect);

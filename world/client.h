@@ -108,7 +108,6 @@ private:
 	bool HandleEnterWorldPacket(const EQApplicationPacket *app);
 	bool HandleDeleteCharacterPacket(const EQApplicationPacket *app);
 	bool HandleChecksumPacket(const EQApplicationPacket *app);
-	bool CheckCharCreateInfo(CharCreate_Struct *cc);
 
 	EQStreamInterface* const eqs;
 

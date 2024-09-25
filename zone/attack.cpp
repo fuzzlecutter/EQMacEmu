@@ -1075,7 +1075,7 @@ void Client::Damage(Mob* other, int32 damage, uint16 spell_id, EQ::skills::Skill
 
 	// Reduce PVP damage. Don't do PvP mitigation if the caster is damaging themself or it's from a DS.
 	bool FromDamageShield = (attack_skill == EQ::skills::SkillAbjuration);
-	if (!FromDamageShield && other && other->IsClient() && (other != this) && damage > 0)
+	if (!FromDamageShield && other && other->IsClient() && damage > 0)
 	{
 		if (spell_id != SPELL_UNKNOWN)
 		{
@@ -1093,7 +1093,7 @@ void Client::Damage(Mob* other, int32 damage, uint16 spell_id, EQ::skills::Skill
 			*/
 
 			// this spell mitigation part is from a client decompile
-			if (IsValidSpell(spell_id) && spells[spell_id].goodEffect == 0)
+			if (IsValidSpell(spell_id) && (spells[spell_id].goodEffect == 0 || IsLichSpell(spell_id)))
 			{
 				int caster_class = other->GetClass();
 				float mitigation;
@@ -1133,6 +1133,18 @@ void Client::Damage(Mob* other, int32 damage, uint16 spell_id, EQ::skills::Skill
 						mitigation = 0.63f;
 					}
 				}
+				
+				// Reintroduce spell dampening for self, but only for lich spells at the correct value.
+				if (other == this)
+				{
+					mitigation = 1.0f;
+					if (RuleB(Quarm, LichDamageMitigation) && IsLichSpell(spell_id))
+					{
+						mitigation = 0.68000001f;
+						Log(Logs::Detail, Logs::Spells, "%s is getting %.2f lich mitigation for %s in slot %d. Was %d damage", GetName(), mitigation, GetSpellName(spell_id), buffslot, damage);
+					}
+				}
+				
 				damage = (int32)((double)damage * mitigation);
 				if (damage < 1)
 				{
@@ -1995,7 +2007,7 @@ bool NPC::Death(Mob* killerMob, int32 damage, uint16 spell, EQ::skills::SkillTyp
 	bool is_majority_killer_dmg = (float)ssf_player_damage > (float)GetMaxHP() * 0.45f;
 
 	if(killer)
-		Log(Logs::Moderate, Logs::Death, "%s Before credit. solo_fte_credit = %i, ds damage: %i, is_majority_ds_damage %i, solo damage %i, is_majority_killer_dmg %i", killer->GetName(), solo_fte_charid, ds_damage, is_majority_ds_damage == true ? 1 : 0, ssf_player_damage, is_majority_killer_dmg == true ? 1 : 0);
+		LogDeathDetail("{} Before credit. solo_fte_credit = {}, ds damage: {}, is_majority_ds_damage {}, solo damage {}, is_majority_killer_dmg {}", killer->GetName(), solo_fte_charid, ds_damage, is_majority_ds_damage == true ? 1 : 0, ssf_player_damage, is_majority_killer_dmg == true ? 1 : 0);
 
 	if (killer && killer->IsClient())
 	{
@@ -2013,7 +2025,7 @@ bool NPC::Death(Mob* killerMob, int32 damage, uint16 spell, EQ::skills::SkillTyp
 
 				if (!is_solo_only && !is_self_found)
 				{
-					Log(Logs::Moderate, Logs::Death, "%s will receive XP credit.", give_exp_client->GetName());
+					LogDeathDetail("{} will receive XP credit.", give_exp_client->GetName());
 
 					// We hand out XP here.
 					GiveExp(give_exp_client, xp);
@@ -2030,29 +2042,29 @@ bool NPC::Death(Mob* killerMob, int32 damage, uint16 spell, EQ::skills::SkillTyp
 						// If Ds damage is from the group, it's okay to give xp - 
 						if (!is_majority_ds_damage && is_majority_killer_dmg)
 						{
-							Log(Logs::Moderate, Logs::Death, "%s will receive XP credit. solo_fte_credit = %i, ds damage: %i, is_majority_ds_damage %i, solo damage %i, is_majority_killer_dmg %i", give_exp_client->GetName(), solo_fte_charid, ds_damage, is_majority_ds_damage == true ? 1 : 0, ssf_player_damage, is_majority_killer_dmg == true ? 1 : 0);
+							LogDeathDetail("{} will receive XP credit. solo_fte_credit = {}, ds damage: {}, is_majority_ds_damage {}, solo damage {}, is_majority_killer_dmg {}", give_exp_client->GetName(), solo_fte_charid, ds_damage, is_majority_ds_damage == true ? 1 : 0, ssf_player_damage, is_majority_killer_dmg == true ? 1 : 0);
 							// We hand out XP here.
 							GiveExp(give_exp_client, xp);
 						}
 						else
 						{
-							Log(Logs::Moderate, Logs::Death, "%s will not receive XP credit (failed killer damage or ds damage check). solo_fte_credit = %i, ds damage: %i, is_majority_ds_damage %i, solo damage %i, is_majority_killer_dmg %i", give_exp_client->GetName(), solo_fte_charid, ds_damage, is_majority_ds_damage == true ? 1 : 0, ssf_player_damage, is_majority_killer_dmg == true ? 1 : 0);
+							LogDeathDetail("{} will not receive XP credit (failed killer damage or ds damage check). solo_fte_credit = {}, ds damage: {}, is_majority_ds_damage {}, solo damage {}, is_majority_killer_dmg {}", give_exp_client->GetName(), solo_fte_charid, ds_damage, is_majority_ds_damage == true ? 1 : 0, ssf_player_damage, is_majority_killer_dmg == true ? 1 : 0);
 						}
 					}
 					else
 					{
-						Log(Logs::Moderate, Logs::Death, "%s will not receive XP credit. failed characterid/groupid/raidid check. solo_fte_credit = %i, ds damage: %i, is_majority_ds_damage %i, solo damage %i, is_majority_killer_dmg %i", give_exp_client->GetName(), solo_fte_charid, ds_damage, is_majority_ds_damage == true ? 1 : 0, ssf_player_damage, is_majority_killer_dmg == true ? 1 : 0);
+						LogDeathDetail("{} will not receive XP credit. failed characterid/groupid/raidid check. solo_fte_credit = {}, ds damage: {}, is_majority_ds_damage {}, solo damage {}, is_majority_killer_dmg {}", give_exp_client->GetName(), solo_fte_charid, ds_damage, is_majority_ds_damage == true ? 1 : 0, ssf_player_damage, is_majority_killer_dmg == true ? 1 : 0);
 					}
 				}
 			}
 			else
 			{
-				Log(Logs::Detail, Logs::Death, "NPC checks failed. No XP for you.");
+				LogDeathDetail("NPC checks failed. No XP for you.");
 			}
 		}
 		else
 		{
-			Log(Logs::Detail, Logs::Death, "Give exp client checks failed. No XP for you.");
+			LogDeathDetail("Give exp client checks failed. No XP for you.");
 		}
 
 		if (IsNPC() && ismerchant && RuleB(Merchant, ClearTempList)) {
@@ -2198,21 +2210,25 @@ void NPC::IdleDeath(Mob* killerMob)
 
 void NPC::CreateCorpse(Mob* killer, int32 dmg_total, bool &corpse_bool)
 {
+	Client* clientKiller = nullptr;
+
 	if (killer != 0)
 	{
 		if (killer->IsPlayerOwned())
 			killer = killer->GetOwner();
 
 		if (killer->IsClient() && !killer->CastToClient()->GetGM())
+		{
 			this->CheckMinMaxLevel(killer);
+			clientKiller = killer->CastToClient();
+		}
 	}
 	uint32 emoteid = this->GetEmoteID();
 	bool is_client_pet = false;
 	if (GetOwner() && GetOwner()->IsClient())
 		is_client_pet = true;
 
-	auto corpse = new Corpse(this, &m_loot_items, GetNPCTypeID(), &NPCTypedata, 
-
+	auto corpse = new Corpse(this, &m_loot_items, GetNPCTypeID(),
 		level > 54 ? RuleI(NPC, MajorNPCCorpseDecayTimeMS) : RuleI(NPC, MinorNPCCorpseDecayTimeMS),
 		is_client_pet);
 	corpse_bool = true;
@@ -2237,10 +2253,10 @@ void NPC::CreateCorpse(Mob* killer, int32 dmg_total, bool &corpse_bool)
 			Raid* raid = entity_list.GetRaidByClient(killer->CastToClient());
 			bool is_raid_solo_fte_credit = raid ? raid->GetID() == CastToNPC()->solo_raid_fte : false;
 			bool is_group_solo_fte_credit = group ? group->GetID() == CastToNPC()->solo_group_fte : false;
-			bool is_majority_ds_damage = (float)ds_damage > (float)GetMaxHP() * 0.45f;
+			bool is_majority_ds_damage = (float)ds_damage - (float)ssf_ds_damage > (float)GetMaxHP() * 0.45f;
 			bool is_majority_killer_dmg = (float)ssf_player_damage > (float)GetMaxHP() * 0.45f;
 
-			if (is_solo_fte_charid)
+			if (is_solo_fte_charid && !is_raid_solo_fte_credit && !is_group_solo_fte_credit)
 			{
 				corpse->AllowPlayerLoot(killer);
 			}
@@ -2266,6 +2282,7 @@ void NPC::CreateCorpse(Mob* killer, int32 dmg_total, bool &corpse_bool)
 				if (r) {
 					r->VerifyRaid();
 					float raidHighestLevel = r->GetHighestLevel2();
+					corpse->SetInitialAllowedLooters(this->sf_fte_list);
 					int i = 0;
 					for (int x = 0; x < MAX_RAID_MEMBERS; x++)
 					{
@@ -2602,7 +2619,7 @@ void Mob::AddToHateList(Mob* other, int32 hate, int32 damage, bool bFrenzy, bool
 			{
 				if (lootLockoutItr->second.HasLockout(Timer::GetTimeSeconds()))
 				{
-					other->CastToClient()->Message(CC_Red, "You were locked out of %s. Sending you out.", GetCleanName() );
+					other->CastToClient()->Message(Chat::Red, "You were locked out of %s. Sending you out.", GetCleanName() );
 					other->CastToClient()->BootFromGuildInstance();
 				}
 			}
@@ -2681,7 +2698,7 @@ void Mob::AddToHateList(Mob* other, int32 hate, int32 damage, bool bFrenzy, bool
 					memcpy(&record.lockout, &lootLockoutItr->second, sizeof(LootLockout));
 					if (zone && zone->GetGuildID() != GUILD_NONE && lootLockoutItr->second.HasLockout(Timer::GetTimeSeconds()))
 					{
-						petowner->CastToClient()->Message(CC_Red, "You were locked out of %s. Sending you out.", GetCleanName());
+						petowner->CastToClient()->Message(Chat::Red, "You were locked out of %s. Sending you out.", GetCleanName());
 						petowner->CastToClient()->BootFromGuildInstance();
 					}
 				}
@@ -3300,7 +3317,7 @@ void Mob::CommonDamage(Mob* attacker, int32 &damage, const uint16 spell_id, cons
 			Log(Logs::Detail, Logs::Combat, "Breaking mez due to attack.");
 			BuffFadeByEffect(SE_Mez);
 			if(IsNPC())
-				entity_list.MessageClose(this, true, RuleI(Range, SpellMessages), CC_User_SpellWornOff, "%s is no longer mezzed. (%s - %s)", GetCleanName(), attacker->GetCleanName(), spell_id != SPELL_UNKNOWN ? GetSpellName(spell_id) : "melee" );
+				entity_list.MessageClose(this, true, RuleI(Range, SpellMessages), Chat::SpellWornOff, "%s is no longer mezzed. (%s - %s)", GetCleanName(), attacker->GetCleanName(), spell_id != SPELL_UNKNOWN ? GetSpellName(spell_id) : "melee" );
 		}
 
 		if(spell_id != SPELL_UNKNOWN && !iBuffTic) {
@@ -3373,9 +3390,12 @@ void Mob::CommonDamage(Mob* attacker, int32 &damage, const uint16 spell_id, cons
 	{ /* Else it is a buff tic - DoT DMG messages were implemented on live in LoY era */
 		if (RuleB(Spells, ShowDotDmgMessages) && IsValidSpell(spell_id) && damage > 0 && attacker)
 		{
-			if (attacker->IsClient()) {
-				attacker->Message_StringID(Chat::SpellWornOff, YOUR_HIT_DOT, GetCleanName(), itoa(damage),
-					spells[spell_id].name);
+			if (damage > 0 && spell_id != SPELL_UNKNOWN)
+			{
+				if (attacker && attacker->IsClient() && attacker != this)
+				{
+					attacker->Message_StringID(Chat::SpellWornOff, YOUR_HIT_DOT, GetCleanName(), itoa(damage), spells[spell_id].name);
+				}
 			}
 		}
 	}
@@ -5151,7 +5171,7 @@ int Client::GetMitigation(bool ignoreCap, int item_ac_sum, int shield_ac, int sp
 		int32 returns = 20;
 
 		if (!content_service.IsThePlanesOfPowerEnabled()) {
-			return 12;
+			returns = 12;
 			if (playerClass == CLERIC || playerClass == DRUID || playerClass == SHAMAN || playerClass == WIZARD || playerClass == MAGICIAN || playerClass == ENCHANTER || playerClass == NECROMANCER) {
 				overcap = 0; // melee only until PoP
 			}

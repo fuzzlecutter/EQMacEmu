@@ -1,0 +1,2 @@
+/* a Shai`din Soultrapper in the spawngroup 223251 (chardok) and 223251 (chardok_instanced [not currently used]) spawns so close to the wall that it's pet is summoned in the wall */
+update spawn2 set y = 138.000000 where zone like 'chardok%' and x = 240.000000 and y = 140.000000 and z = 44.400002;

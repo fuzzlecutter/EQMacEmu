@@ -960,7 +960,7 @@
 #define LogQuestErrorsDetail(message, ...) do {\
 } while (0)
 	
-#define LogScheduler (message, ...) do {\
+#define LogScheduler(message, ...) do {\
 } while (0)
 
 #define LogSchedulerDetail(message, ...) do {\

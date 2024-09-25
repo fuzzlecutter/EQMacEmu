@@ -22,6 +22,7 @@ public:
 		uint32_t    id;
 		uint8_t     value;
 		std::string zone;
+		uint32_t    instance_id;
 	};
 
 	static std::string PrimaryKey()
@@ -35,6 +36,7 @@ public:
 			"id",
 			"value",
 			"zone",
+			"instance_id",
 		};
 	}
 
@@ -44,6 +46,7 @@ public:
 			"id",
 			"value",
 			"zone",
+			"instance_id",
 		};
 	}
 
@@ -87,6 +90,7 @@ public:
 		e.id    = 0;
 		e.value = 0;
 		e.zone  = "";
+		e.instance_id = 0;
 
 		return e;
 	}
@@ -123,9 +127,10 @@ public:
 		if (results.RowCount() == 1) {
 			SpawnConditionValues e{};
 
-			e.id    = row[0] ? static_cast<uint32_t>(strtoul(row[0], nullptr, 10)) : 0;
-			e.value = row[1] ? static_cast<uint8_t>(strtoul(row[1], nullptr, 10)) : 0;
-			e.zone  = row[2] ? row[2] : "";
+			e.id          = row[0] ? static_cast<uint32_t>(strtoul(row[0], nullptr, 10)) : 0;
+			e.value       = row[1] ? static_cast<uint8_t>(strtoul(row[1], nullptr, 10)) : 0;
+			e.zone        = row[2] ? row[2] : "";
+			e.instance_id = row[3] ? static_cast<uint32_t>(strtoul(row[3], nullptr, 10)) : 0;
 
 			return e;
 		}
@@ -162,6 +167,7 @@ public:
 		v.push_back(columns[0] + " = " + std::to_string(e.id));
 		v.push_back(columns[1] + " = " + std::to_string(e.value));
 		v.push_back(columns[2] + " = '" + Strings::Escape(e.zone) + "'");
+		v.push_back(columns[3] + " = " + std::to_string(e.instance_id));
 
 		auto results = db.QueryDatabase(
 			fmt::format(
@@ -186,6 +192,7 @@ public:
 		v.push_back(std::to_string(e.id));
 		v.push_back(std::to_string(e.value));
 		v.push_back("'" + Strings::Escape(e.zone) + "'");
+		v.push_back(std::to_string(e.instance_id));
 
 		auto results = db.QueryDatabase(
 			fmt::format(
@@ -218,6 +225,7 @@ public:
 			v.push_back(std::to_string(e.id));
 			v.push_back(std::to_string(e.value));
 			v.push_back("'" + Strings::Escape(e.zone) + "'");
+			v.push_back(std::to_string(e.instance_id));
 
 			insert_chunks.push_back("(" + Strings::Implode(",", v) + ")");
 		}
@@ -251,9 +259,10 @@ public:
 		for (auto row = results.begin(); row != results.end(); ++row) {
 			SpawnConditionValues e{};
 
-			e.id    = row[0] ? static_cast<uint32_t>(strtoul(row[0], nullptr, 10)) : 0;
-			e.value = row[1] ? static_cast<uint8_t>(strtoul(row[1], nullptr, 10)) : 0;
-			e.zone  = row[2] ? row[2] : "";
+			e.id          = row[0] ? static_cast<uint32_t>(strtoul(row[0], nullptr, 10)) : 0;
+			e.value       = row[1] ? static_cast<uint8_t>(strtoul(row[1], nullptr, 10)) : 0;
+			e.zone        = row[2] ? row[2] : "";
+			e.instance_id = row[3] ? static_cast<uint32_t>(strtoul(row[3], nullptr, 10)) : 0;
 
 			all_entries.push_back(e);
 		}
@@ -278,9 +287,10 @@ public:
 		for (auto row = results.begin(); row != results.end(); ++row) {
 			SpawnConditionValues e{};
 
-			e.id    = row[0] ? static_cast<uint32_t>(strtoul(row[0], nullptr, 10)) : 0;
-			e.value = row[1] ? static_cast<uint8_t>(strtoul(row[1], nullptr, 10)) : 0;
-			e.zone  = row[2] ? row[2] : "";
+			e.id          = row[0] ? static_cast<uint32_t>(strtoul(row[0], nullptr, 10)) : 0;
+			e.value       = row[1] ? static_cast<uint8_t>(strtoul(row[1], nullptr, 10)) : 0;
+			e.zone        = row[2] ? row[2] : "";
+			e.instance_id = row[3] ? static_cast<uint32_t>(strtoul(row[3], nullptr, 10)) : 0;
 
 			all_entries.push_back(e);
 		}

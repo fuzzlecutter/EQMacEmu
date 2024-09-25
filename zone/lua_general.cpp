@@ -17,6 +17,7 @@
 #include "quest_parser_collection.h"
 #include "questmgr.h"
 #include "qglobals.h"
+#include "../common/guilds.h"
 #include "../common/timer.h"
 #include "../common/eqemu_logsys.h"
 #include "../common/rulesys.h"
@@ -550,12 +551,12 @@ void lua_set_anim(int npc_type, int anim_num) {
 	quest_manager.setanim(npc_type, anim_num);
 }
 
-void lua_spawn_condition(const char *zone, int condition_id, int value) {
-	quest_manager.spawn_condition(zone, condition_id, value);
+void lua_spawn_condition(const char *zone_short_name, int condition_id, int value) {
+	quest_manager.spawn_condition(zone_short_name, zone->GetGuildID(), condition_id, value);
 }
 
-int lua_get_spawn_condition(const char *zone, int condition_id) {
-	return quest_manager.get_spawn_condition(zone, condition_id);
+int lua_get_spawn_condition(const char *zone_short_name, int condition_id) {
+	return quest_manager.get_spawn_condition(zone_short_name, zone->GetGuildID(), condition_id);
 }
 
 void lua_toggle_spawn_event(int event_id, bool enable, bool strict, bool reset) {
@@ -1109,14 +1110,20 @@ float lua_get_current_expansion() {
 }
 
 void lua_debug(std::string message) {
-	Log(Logs::General, Logs::QuestDebug, message.c_str());
+	const char* messageChar = message.c_str();
+	LogQuestDebug("{}", messageChar);
 }
 
 void lua_debug(std::string message, int level) {
 	if (level < Logs::General || level > Logs::Detail)
 		return;
 
-	Log(static_cast<Logs::DebugLevel>(level), Logs::QuestDebug, message.c_str());
+	const char* messageChar = message.c_str();
+
+	if(level == Logs::Detail)
+		LogQuestDebugDetail("{}", messageChar);
+	else
+		LogQuestDebug("{}", messageChar);
 }
 
 void lua_map_opcodes() {
@@ -1373,6 +1380,10 @@ float get_ruler(int rule) {
 
 bool get_ruleb(int rule) {
 	return RuleManager::Instance()->GetBoolRule((RuleManager::BoolType)rule);
+}
+
+std::string get_rules(int rule) {
+	return RuleManager::Instance()->GetStringRule((RuleManager::StringType)rule);
 }
 
 luabind::scope lua_register_general() {
@@ -1767,17 +1778,23 @@ luabind::scope lua_register_rules_const() {
 #define RULE_INT(cat, rule, default_value, notes) \
 		luabind::value(#rule, RuleManager::Int__##rule),
 #include "../common/ruletypes.h"
-			luabind::value("_IntRuleCount", RuleManager::_IntRuleCount),
+		luabind::value("_IntRuleCount", RuleManager::_IntRuleCount),
 #undef RULE_INT
 #define RULE_REAL(cat, rule, default_value, notes) \
 		luabind::value(#rule, RuleManager::Real__##rule),
 #include "../common/ruletypes.h"
-			luabind::value("_RealRuleCount", RuleManager::_RealRuleCount),
+		luabind::value("_RealRuleCount", RuleManager::_RealRuleCount),
 #undef RULE_REAL
 #define RULE_BOOL(cat, rule, default_value, notes) \
 		luabind::value(#rule, RuleManager::Bool__##rule),
 #include "../common/ruletypes.h"
-			luabind::value("_BoolRuleCount", RuleManager::_BoolRuleCount)
+		luabind::value("_BoolRuleCount", RuleManager::_BoolRuleCount),
+#undef RULE_BOOL
+#define RULE_STRING(cat, rule, default_value, notes) \
+		luabind::value(#rule, RuleManager::String__##rule),
+#include "../common/ruletypes.h"
+		luabind::value("_StringRuleCount", RuleManager::_StringRuleCount)
+#undef RULE_STRING
 		];
 }
 

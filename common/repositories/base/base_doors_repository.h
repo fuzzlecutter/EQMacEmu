@@ -48,6 +48,7 @@ public:
 		int8_t      islift;
 		int32_t     close_time;
 		int8_t      can_open;
+		int8_t      instance_only;
 		float       min_expansion;
 		float       max_expansion;
 		int8_t      guild_zone_door;
@@ -92,6 +93,7 @@ public:
 			"islift",
 			"close_time",
 			"can_open",
+			"instance_only",
 			"min_expansion",
 			"max_expansion",
 			"guild_zone_door",
@@ -132,6 +134,7 @@ public:
 			"islift",
 			"close_time",
 			"can_open",
+			"instance_only",
 			"min_expansion",
 			"max_expansion",
 			"guild_zone_door",
@@ -206,6 +209,7 @@ public:
 		e.islift                 = 0;
 		e.close_time             = 5;
 		e.can_open               = 1;
+		e.instance_only          = 0;
 		e.min_expansion          = -1;
 		e.max_expansion          = -1;
 		e.guild_zone_door        = 0;
@@ -276,11 +280,12 @@ public:
 			e.islift                 = row[26] ? static_cast<int8_t>(atoi(row[26])) : 0;
 			e.close_time             = row[27] ? static_cast<int32_t>(atoi(row[27])) : 5;
 			e.can_open               = row[28] ? static_cast<int8_t>(atoi(row[28])) : 1;
-			e.min_expansion          = row[29] ? strtof(row[29], nullptr) : -1;
-			e.max_expansion          = row[30] ? strtof(row[30], nullptr) : -1;
-			e.guild_zone_door        = row[31] ? static_cast<int8_t>(atoi(row[31])) : 0;
-			e.content_flags          = row[32] ? row[32] : "";
-			e.content_flags_disabled = row[33] ? row[33] : "";
+			e.instance_only          = row[29] ? static_cast<int8_t>(atoi(row[29])) : 0;
+			e.min_expansion          = row[30] ? strtof(row[30], nullptr) : -1;
+			e.max_expansion          = row[31] ? strtof(row[31], nullptr) : -1;
+			e.guild_zone_door        = row[32] ? static_cast<int8_t>(atoi(row[32])) : 0;
+			e.content_flags          = row[33] ? row[33] : "";
+			e.content_flags_disabled = row[34] ? row[34] : "";
 
 			return e;
 		}
@@ -342,11 +347,12 @@ public:
 		v.push_back(columns[26] + " = " + std::to_string(e.islift));
 		v.push_back(columns[27] + " = " + std::to_string(e.close_time));
 		v.push_back(columns[28] + " = " + std::to_string(e.can_open));
-		v.push_back(columns[29] + " = " + std::to_string(e.min_expansion));
-		v.push_back(columns[30] + " = " + std::to_string(e.max_expansion));
-		v.push_back(columns[31] + " = " + std::to_string(e.guild_zone_door));
-		v.push_back(columns[32] + " = '" + Strings::Escape(e.content_flags) + "'");
-		v.push_back(columns[33] + " = '" + Strings::Escape(e.content_flags_disabled) + "'");
+		v.push_back(columns[29] + " = " + std::to_string(e.instance_only));
+		v.push_back(columns[30] + " = " + std::to_string(e.min_expansion));
+		v.push_back(columns[31] + " = " + std::to_string(e.max_expansion));
+		v.push_back(columns[32] + " = " + std::to_string(e.guild_zone_door));
+		v.push_back(columns[33] + " = '" + Strings::Escape(e.content_flags) + "'");
+		v.push_back(columns[34] + " = '" + Strings::Escape(e.content_flags_disabled) + "'");
 
 		auto results = db.QueryDatabase(
 			fmt::format(
@@ -397,6 +403,7 @@ public:
 		v.push_back(std::to_string(e.islift));
 		v.push_back(std::to_string(e.close_time));
 		v.push_back(std::to_string(e.can_open));
+		v.push_back(std::to_string(e.instance_only));
 		v.push_back(std::to_string(e.min_expansion));
 		v.push_back(std::to_string(e.max_expansion));
 		v.push_back(std::to_string(e.guild_zone_door));
@@ -460,6 +467,7 @@ public:
 			v.push_back(std::to_string(e.islift));
 			v.push_back(std::to_string(e.close_time));
 			v.push_back(std::to_string(e.can_open));
+			v.push_back(std::to_string(e.instance_only));
 			v.push_back(std::to_string(e.min_expansion));
 			v.push_back(std::to_string(e.max_expansion));
 			v.push_back(std::to_string(e.guild_zone_door));
@@ -527,11 +535,12 @@ public:
 			e.islift                 = row[26] ? static_cast<int8_t>(atoi(row[26])) : 0;
 			e.close_time             = row[27] ? static_cast<int32_t>(atoi(row[27])) : 5;
 			e.can_open               = row[28] ? static_cast<int8_t>(atoi(row[28])) : 1;
-			e.min_expansion          = row[29] ? strtof(row[29], nullptr) : -1;
-			e.max_expansion          = row[30] ? strtof(row[30], nullptr) : -1;
-			e.guild_zone_door        = row[31] ? static_cast<int8_t>(atoi(row[31])) : 0;
-			e.content_flags          = row[32] ? row[32] : "";
-			e.content_flags_disabled = row[33] ? row[33] : "";
+			e.instance_only          = row[29] ? static_cast<int8_t>(atoi(row[29])) : 0;
+			e.min_expansion          = row[30] ? strtof(row[30], nullptr) : -1;
+			e.max_expansion          = row[31] ? strtof(row[31], nullptr) : -1;
+			e.guild_zone_door        = row[32] ? static_cast<int8_t>(atoi(row[32])) : 0;
+			e.content_flags          = row[33] ? row[33] : "";
+			e.content_flags_disabled = row[34] ? row[34] : "";
 
 			all_entries.push_back(e);
 		}
@@ -585,11 +594,12 @@ public:
 			e.islift                 = row[26] ? static_cast<int8_t>(atoi(row[26])) : 0;
 			e.close_time             = row[27] ? static_cast<int32_t>(atoi(row[27])) : 5;
 			e.can_open               = row[28] ? static_cast<int8_t>(atoi(row[28])) : 1;
-			e.min_expansion          = row[29] ? strtof(row[29], nullptr) : -1;
-			e.max_expansion          = row[30] ? strtof(row[30], nullptr) : -1;
-			e.guild_zone_door        = row[31] ? static_cast<int8_t>(atoi(row[31])) : 0;
-			e.content_flags          = row[32] ? row[32] : "";
-			e.content_flags_disabled = row[33] ? row[33] : "";
+			e.instance_only			 = row[29] ? static_cast<int8_t>(atoi(row[29])) : 0;
+			e.min_expansion          = row[30] ? strtof(row[30], nullptr) : -1;
+			e.max_expansion          = row[31] ? strtof(row[31], nullptr) : -1;
+			e.guild_zone_door        = row[32] ? static_cast<int8_t>(atoi(row[32])) : 0;
+			e.content_flags          = row[33] ? row[33] : "";
+			e.content_flags_disabled = row[34] ? row[34] : "";
 
 			all_entries.push_back(e);
 		}

@@ -655,7 +655,7 @@ bool ZoneServer::Process() {
 					}
 					else if (cle->Server() == 0) {
 						if (scm->chan_num == ChatChannel_Tell)
-							zoneserver_list.SendEmoteMessage(scm->from, 0, AccountStatus::Player, Chat::White, fmt::format(" {} is not contactable at this time'", scm->to).c_str());
+							zoneserver_list.SendEmoteMessage(scm->from, 0, AccountStatus::Player, Chat::Default, fmt::format(" {} is not contactable at this time'", scm->to).c_str());
 					}
 					else
 					{
@@ -664,7 +664,7 @@ bool ZoneServer::Process() {
 							if (cle && sender && sender->Revoked() && cle->Admin() <= 0)
 							{
 								if (scm->chan_num == ChatChannel_Tell)
-									zoneserver_list.SendEmoteMessage(scm->from, 0, AccountStatus::Player, CC_Default, "You are server muted, and aren't able to send a message to anyone but a CSR.");
+									zoneserver_list.SendEmoteMessage(scm->from, 0, AccountStatus::Player, Chat::Default, "You are server muted, and aren't able to send a message to anyone but a CSR.");
 								break;
 							}
 						}

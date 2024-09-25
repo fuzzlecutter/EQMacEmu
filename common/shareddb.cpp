@@ -805,7 +805,7 @@ const EQ::ItemData* SharedDatabase::GetItem(uint32 id)
 		if (returned_item != nullptr)
 		{
 			bool expansion_enabled = RuleR(World, CurrentExpansion) >= returned_item->min_expansion && RuleR(World, CurrentExpansion) < returned_item->max_expansion;
-			bool expansion_all = returned_item->min_expansion == ExpansionEras::AllEQEras && returned_item->max_expansion == ExpansionEras::AllEQEras;
+			bool expansion_all = returned_item->min_expansion == AllEQErasFloat && returned_item->max_expansion == AllEQErasFloat;
 			if (expansion_enabled || expansion_all)
 			{
 				return returned_item;
@@ -833,7 +833,7 @@ const EQ::ItemData* SharedDatabase::IterateItems(uint32* id)
 			if (returned_item != nullptr)
 			{
 				bool expansion_enabled = RuleR(World, CurrentExpansion) >= returned_item->min_expansion && RuleR(World, CurrentExpansion) < returned_item->max_expansion;
-				bool expansion_all = returned_item->min_expansion == ExpansionEras::AllEQEras && returned_item->max_expansion == ExpansionEras::AllEQEras;
+				bool expansion_all = returned_item->min_expansion == AllEQErasFloat && returned_item->max_expansion == AllEQErasFloat;
 				if (expansion_enabled || expansion_all)
 				{
 					++(*id);
@@ -1078,24 +1078,24 @@ int32 SharedDatabase::DeleteStalePlayerCorpses()
 		rows_affected += results.RowsAffected();
 	}
 
-	if(RuleB(Character, UsePlayerCorpseBackups))
-	{
-		std::string cb_query = StringFormat(
-			"SELECT id FROM `character_corpses_backup`");
-		auto cb_results = QueryDatabase(cb_query);
-		for (auto row = cb_results.begin(); row != cb_results.end(); ++row) {
-			uint32 corpse_id = atoi(row[0]);
-			std::string cbd_query = StringFormat(
-				"DELETE from character_corpses_backup where id = %d AND ( "
-				"SELECT COUNT(*) from character_corpse_items_backup where corpse_id = %d) "
-				" = 0", corpse_id, corpse_id);
-			auto cbd_results = QueryDatabase(cbd_query);
-			if(!cbd_results.Success())
-				return -1;
+	//if(RuleB(Character, UsePlayerCorpseBackups))
+	//{
+	//	std::string cb_query = StringFormat(
+	//		"SELECT id FROM `character_corpses_backup`");
+	//	auto cb_results = QueryDatabase(cb_query);
+	//	for (auto row = cb_results.begin(); row != cb_results.end(); ++row) {
+	//		uint32 corpse_id = atoi(row[0]);
+	//		std::string cbd_query = StringFormat(
+	//			"DELETE from character_corpses_backup where id = %d AND ( "
+	//			"SELECT COUNT(*) from character_corpse_items_backup where corpse_id = %d) "
+	//			" = 0", corpse_id, corpse_id);
+	//		auto cbd_results = QueryDatabase(cbd_query);
+	//		if(!cbd_results.Success())
+	//			return -1;
 
-			rows_affected += cbd_results.RowsAffected();
-		}
-	}
+	//		rows_affected += cbd_results.RowsAffected();
+	//	}
+	//}
 
     return rows_affected;
 }
@@ -1566,416 +1566,6 @@ void SharedDatabase::LoadSpells(void *data, int max_spells)
     }
 
     LoadDamageShieldTypes(sp, max_spells);
-}
-
-int SharedDatabase::GetMaxBaseDataLevel() 
-{
-	const std::string query = "SELECT MAX(level) FROM base_data";
-	auto results = QueryDatabase(query);
-	if (!results.Success()) {
-		return -1;
-	}
-
-	if (results.RowCount() == 0)
-        return -1;
-
-    auto row = results.begin();
-
-	return atoi(row[0]);
-}
-
-bool SharedDatabase::LoadBaseData(const std::string &prefix) 
-{
-	base_data_mmf.reset(nullptr);
-
-	try {
-		auto Config = EQEmuConfig::get();
-		EQ::IPCMutex mutex("base_data");
-		mutex.Lock();
-
-		std::string file_name = Config->SharedMemDir + prefix + std::string("base_data");
-		LogInfo("[Shared Memory] Attempting to load file [{0}]", file_name);
-		base_data_mmf = std::unique_ptr<EQ::MemoryMappedFile>(new EQ::MemoryMappedFile(file_name));
-		mutex.Unlock();
-	} catch(std::exception& ex) {
-		LogError("Error Loading Base Data: {0}", ex.what());
-		return false;
-	}
-
-	return true;
-}
-
-void SharedDatabase::LoadBaseData(void *data, int max_level)
-{
-	char *base_ptr = reinterpret_cast<char*>(data);
-
-	const std::string query = "SELECT * FROM base_data ORDER BY level, class ASC";
-	auto results = QueryDatabase(query);
-	if (!results.Success()) {
-        return;
-	}
-
-    int lvl = 0;
-    int cl = 0;
-
-    for (auto row = results.begin(); row != results.end(); ++row) {
-        lvl = atoi(row[0]);
-        cl = atoi(row[1]);
-
-        if(lvl <= 0) {
-            LogError("Non fatal error: base_data.level <= 0, ignoring.");
-            continue;
-        }
-
-        if(lvl >= max_level) {
-            LogError("Non fatal error: base_data.level >= max_level, ignoring.");
-            continue;
-        }
-
-        if(cl <= 0) {
-            LogError("Non fatal error: base_data.cl <= 0, ignoring.");
-            continue;
-        }
-
-        if(cl > 16) {
-            LogError("Non fatal error: base_data.class > 16, ignoring.");
-            continue;
-        }
-
-        BaseDataStruct *bd = reinterpret_cast<BaseDataStruct*>(base_ptr + (((16 * (lvl - 1)) + (cl - 1)) * sizeof(BaseDataStruct)));
-		bd->base_hp = atof(row[2]);
-		bd->base_mana = atof(row[3]);
-		bd->base_end = atof(row[4]);
-		bd->unk1 = atof(row[5]);
-		bd->unk2 = atof(row[6]);
-		bd->hp_factor = atof(row[7]);
-		bd->mana_factor = atof(row[8]);
-		bd->endurance_factor = atof(row[9]);
-    }
-}
-
-const BaseDataStruct* SharedDatabase::GetBaseData(int lvl, int cl)
-{
-	if(!base_data_mmf) {
-		return nullptr;
-	}
-
-	if(lvl <= 0) {
-		return nullptr;
-	}
-
-	if(cl <= 0) {
-		return nullptr;
-	}
-
-	if(cl > 16) {
-		return nullptr;
-	}
-
-	char *base_ptr = reinterpret_cast<char*>(base_data_mmf->Get());
-
-	uint32 offset = ((16 * (lvl - 1)) + (cl - 1)) * sizeof(BaseDataStruct);
-
-	if(offset >= base_data_mmf->Size()) {
-		return nullptr;
-	}
-
-	BaseDataStruct *bd = reinterpret_cast<BaseDataStruct*>(base_ptr + offset);
-	return bd;
-}
-
-void SharedDatabase::GetLootTableInfo(uint32 &loot_table_count, uint32 &max_loot_table, uint32 &loot_table_entries) 
-{
-	loot_table_count = 0;
-	max_loot_table = 0;
-	loot_table_entries = 0;
-	const std::string query =
-		fmt::format(
-			"SELECT COUNT(*), MAX(id), (SELECT COUNT(*) FROM loottable_entries) FROM loottable WHERE TRUE {}",
-			ContentFilterCriteria::apply()
-		);
-    auto results = QueryDatabase(query);
-    if (!results.Success()) {
-        return;
-    }
-
-	if (results.RowCount() == 0)
-        return;
-
-	auto row = results.begin();
-
-    loot_table_count = static_cast<uint32>(atoul(row[0]));
-	max_loot_table = static_cast<uint32>(atoul(row[1] ? row[1] : "0"));
-	loot_table_entries = static_cast<uint32>(atoul(row[2]));
-}
-
-void SharedDatabase::GetLootDropInfo(uint32 &loot_drop_count, uint32 &max_loot_drop, uint32 &loot_drop_entries)
-{
-	loot_drop_count = 0;
-	max_loot_drop = 0;
-	loot_drop_entries = 0;
-
-	const std::string query = fmt::format(
-		"SELECT COUNT(*), MAX(id), (SELECT COUNT(*) FROM lootdrop_entries) FROM lootdrop WHERE TRUE {}",
-		ContentFilterCriteria::apply()
-	);
-    auto results = QueryDatabase(query);
-    if (!results.Success()) {
-        return;
-    }
-
-	if (results.RowCount() == 0)
-        return;
-
-    auto row =results.begin();
-
-    loot_drop_count = static_cast<uint32>(atoul(row[0]));
-	max_loot_drop = static_cast<uint32>(atoul(row[1] ? row[1] : "0"));
-	loot_drop_entries = static_cast<uint32>(atoul(row[2]));
-}
-
-void SharedDatabase::LoadLootTables(void *data, uint32 size) 
-{
-	EQ::FixedMemoryVariableHashSet<LootTable_Struct> hash(reinterpret_cast<uint8*>(data), size);
-
-	uint8 loot_table[sizeof(LootTable_Struct) + (sizeof(LootTableEntries_Struct) * 128)];
-	LootTable_Struct *lt = reinterpret_cast<LootTable_Struct*>(loot_table);
-
-	const std::string query = fmt::format(
-		SQL(
-			SELECT
-			loottable.id,
-			loottable.mincash,
-			loottable.maxcash,
-			loottable.avgcoin,
-			loottable_entries.lootdrop_id,
-			loottable_entries.multiplier,
-			loottable_entries.droplimit,
-			loottable_entries.mindrop,
-			loottable_entries.probability,
-			loottable_entries.multiplier_min,
-			loottable.min_expansion,
-			loottable.max_expansion,
-			loottable.content_flags,
-			loottable.content_flags_disabled
-			FROM
-			loottable
-			LEFT JOIN loottable_entries ON loottable.id = loottable_entries.loottable_id
-			WHERE TRUE {}
-			ORDER BY
-			id
-		),
-		ContentFilterCriteria::apply()
-	);
-
-    auto results = QueryDatabase(query);
-    if (!results.Success()) {
-        return;
-    }
-
-    uint32 current_id = 0;
-    uint32 current_entry = 0;
-
-    for (auto row = results.begin(); row != results.end(); ++row) {
-        uint32 id = static_cast<uint32>(atoul(row[0]));
-        if(id != current_id) {
-			if (current_id != 0) {
-				hash.insert(
-					current_id,
-					loot_table,
-					(sizeof(LootTable_Struct) + (sizeof(LootTableEntries_Struct) * lt->NumEntries))
-				);
-			}
-
-            memset(loot_table, 0, sizeof(LootTable_Struct) + (sizeof(LootTableEntries_Struct) * 128));
-            current_entry = 0;
-            current_id = id;
-            lt->mincash = static_cast<uint32>(atoul(row[1]));
-            lt->maxcash = static_cast<uint32>(atoul(row[2]));
-            lt->avgcoin = static_cast<uint32>(atoul(row[3]));
-
-			lt->content_flags.min_expansion = static_cast<float>(atof(row[10]));
-			lt->content_flags.max_expansion = static_cast<float>(atof(row[11]));
-
-			strn0cpy(lt->content_flags.content_flags, row[12], sizeof(lt->content_flags.content_flags));
-			strn0cpy(lt->content_flags.content_flags_disabled, row[13], sizeof(lt->content_flags.content_flags_disabled));
-        }
-
-		if (current_entry > 128) {
-			continue;
-		}
-
-		if (!row[4]) {
-			continue;
-		}
-
-        lt->Entries[current_entry].lootdrop_id = static_cast<uint32>(atoul(row[4]));
-        lt->Entries[current_entry].multiplier = static_cast<uint8>(atoi(row[5]));
-        lt->Entries[current_entry].droplimit = static_cast<uint8>(atoi(row[6]));
-        lt->Entries[current_entry].mindrop = static_cast<uint8>(atoi(row[7]));
-		lt->Entries[current_entry].probability = static_cast<float>(atof(row[8]));
-		lt->Entries[current_entry].multiplier_min = static_cast<uint8>(atoi(row[9]));
-
-        ++(lt->NumEntries);
-        ++current_entry;
-    }
-
-	if (current_id != 0) {
-		hash.insert(
-			current_id,
-			loot_table,
-			(sizeof(LootTable_Struct) + (sizeof(LootTableEntries_Struct) * lt->NumEntries))
-		);
-	}
-
-}
-
-/*
-C6262	Excessive stack usage
-Function uses '16608' bytes of stack:  exceeds /analyze:stacksize '16384'. 
-Consider moving some data to heap.	common	shareddb.cpp	1489
-*/
-void SharedDatabase::LoadLootDrops(void *data, uint32 size) 
-{
-	EQ::FixedMemoryVariableHashSet<LootDrop_Struct> hash(reinterpret_cast<uint8*>(data), size);
-	uint8 loot_drop[sizeof(LootDrop_Struct) + (sizeof(LootDropEntries_Struct) * 1260)];
-	LootDrop_Struct *p_loot_drop_struct = reinterpret_cast<LootDrop_Struct*>(loot_drop);
-	
-	const std::string query = fmt::format(
-		SQL(
-			SELECT
-				lootdrop.id,
-				lootdrop_entries.item_id,
-				lootdrop_entries.item_charges,
-				lootdrop_entries.equip_item,
-				lootdrop_entries.chance,
-				lootdrop_entries.minlevel,
-				lootdrop_entries.maxlevel,
-				lootdrop_entries.multiplier,
-				lootdrop_entries.min_looter_level,
-				lootdrop_entries.item_loot_lockout_timer,
-				lootdrop_entries.min_expansion,
-				lootdrop_entries.max_expansion,
-				lootdrop.min_expansion,
-				lootdrop.max_expansion,
-				lootdrop.content_flags,
-				lootdrop.content_flags_disabled
-			FROM
-				lootdrop 
-				JOIN lootdrop_entries ON lootdrop.id = lootdrop_entries.lootdrop_id 
-			WHERE
-				TRUE {}
-			ORDER BY lootdrop_id
-		),
-		LootContentFilterCriteria::apply("lootdrop", "lootdrop_entries")
-	);
-
-    auto results = QueryDatabase(query);
-    if (!results.Success()) {
-		return;
-    }
-
-    uint32 current_id = 0;
-    uint32 current_entry = 0;
-
-    for (auto row = results.begin(); row != results.end(); ++row) {
-        uint32 id = static_cast<uint32>(atoul(row[0]));
-        if(id != current_id) {
-			if (current_id != 0) {
-				hash.insert(current_id, loot_drop, (sizeof(LootDrop_Struct) + (sizeof(LootDropEntries_Struct) * p_loot_drop_struct->NumEntries)));
-			}
-            memset(loot_drop, 0, sizeof(LootDrop_Struct) + (sizeof(LootDropEntries_Struct) * 1260));
-			current_entry = 0;
-			current_id = id;
-
-			p_loot_drop_struct->content_flags.min_expansion = static_cast<float>(atof(row[12]));
-			p_loot_drop_struct->content_flags.max_expansion = static_cast<float>(atof(row[13]));
-
-			strn0cpy(p_loot_drop_struct->content_flags.content_flags, row[14], sizeof(p_loot_drop_struct->content_flags.content_flags));
-			strn0cpy(p_loot_drop_struct->content_flags.content_flags_disabled, row[15], sizeof(p_loot_drop_struct->content_flags.content_flags_disabled));
-        }
-
-		if (current_entry >= 1260) {
-			continue;
-		}
-
-		p_loot_drop_struct->Entries[current_entry].item_id = static_cast<uint32>(atoul(row[1]));
-		p_loot_drop_struct->Entries[current_entry].item_charges = static_cast<int8>(atoi(row[2]));
-		p_loot_drop_struct->Entries[current_entry].equip_item = static_cast<uint8>(atoi(row[3]));
-		p_loot_drop_struct->Entries[current_entry].chance = static_cast<float>(atof(row[4]));
-		p_loot_drop_struct->Entries[current_entry].minlevel = static_cast<uint8>(atoi(row[5]));
-		p_loot_drop_struct->Entries[current_entry].maxlevel = static_cast<uint8>(atoi(row[6]));
-		p_loot_drop_struct->Entries[current_entry].multiplier = static_cast<uint8>(atoi(row[7]));
-		p_loot_drop_struct->Entries[current_entry].min_expansion = atof(row[10]);
-		p_loot_drop_struct->Entries[current_entry].max_expansion = atof(row[11]);
-		p_loot_drop_struct->Entries[current_entry].min_looter_level = (atoi(row[8]));
-		p_loot_drop_struct->Entries[current_entry].item_loot_lockout_timer = static_cast<uint32>(atoul(row[9]));
-        ++(p_loot_drop_struct->NumEntries);
-        ++current_entry;
-    }
-
-	if (current_id != 0) {
-		hash.insert(current_id, loot_drop, (sizeof(LootDrop_Struct) + (sizeof(LootDropEntries_Struct) * p_loot_drop_struct->NumEntries)));
-	}
-
-}
-
-bool SharedDatabase::LoadLoot(const std::string &prefix) 
-{
-	loot_table_mmf.reset(nullptr);
-	loot_drop_mmf.reset(nullptr);
-
-	try {
-		auto Config = EQEmuConfig::get();
-		EQ::IPCMutex mutex("loot");
-		mutex.Lock();
-		std::string file_name_lt = Config->SharedMemDir + prefix + std::string("loot_table");
-		loot_table_mmf = std::unique_ptr<EQ::MemoryMappedFile>(new EQ::MemoryMappedFile(file_name_lt));
-		loot_table_hash = std::unique_ptr<EQ::FixedMemoryVariableHashSet<LootTable_Struct>>(new EQ::FixedMemoryVariableHashSet<LootTable_Struct>(
-			reinterpret_cast<uint8*>(loot_table_mmf->Get()),
-			loot_table_mmf->Size()));
-		std::string file_name_ld = Config->SharedMemDir + prefix + std::string("loot_drop");
-		loot_drop_mmf = std::unique_ptr<EQ::MemoryMappedFile>(new EQ::MemoryMappedFile(file_name_ld));
-		loot_drop_hash = std::unique_ptr<EQ::FixedMemoryVariableHashSet<LootDrop_Struct>>(new EQ::FixedMemoryVariableHashSet<LootDrop_Struct>(
-			reinterpret_cast<uint8*>(loot_drop_mmf->Get()),
-			loot_drop_mmf->Size()));
-		mutex.Unlock();
-	} catch(std::exception &ex) {
-		LogError("Error loading loot: {0}", ex.what());
-		return false;
-	}
-
-	return true;
-}
-
-const LootTable_Struct* SharedDatabase::GetLootTable(uint32 loottable_id)
-{
-	if(!loot_table_hash)
-		return nullptr;
-
-	try {
-		if(loot_table_hash->exists(loottable_id)) {
-			return &loot_table_hash->at(loottable_id);
-		}
-	} catch(std::exception &ex) {
-		LogError("Could not get loot table: {0}", ex.what());
-	}
-	return nullptr;
-}
-
-const LootDrop_Struct* SharedDatabase::GetLootDrop(uint32 lootdrop_id)
-{
-	if(!loot_drop_hash)
-		return nullptr;
-
-	try {
-		if(loot_drop_hash->exists(lootdrop_id)) {
-			return &loot_drop_hash->at(lootdrop_id);
-		}
-	} catch(std::exception &ex) {
-		LogError("Could not get loot drop: {0}", ex.what());
-	}
-	return nullptr;
 }
 
 bool SharedDatabase::VerifyToken(std::string token, int& status)

@@ -437,7 +437,7 @@ void QueryServ::QSDeleteItems() {}
 void QueryServ::QSMoveItems() {}
 
 void QueryServ::QSLogKillSteal(NPC* const npc, uint32 zoneid, Client* const client, const SInitialEngageEntry& engageEntry) {
-	const auto& items = npc->GetItemList();
+	const auto& items = npc->GetLootItems();
 	Json::Value loot;
 	loot["items"] = Json::Value(Json::arrayValue);
 	for (const auto& item : items) {

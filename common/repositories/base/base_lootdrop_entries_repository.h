@@ -19,19 +19,21 @@
 class BaseLootdropEntriesRepository {
 public:
 	struct LootdropEntries {
-		uint32_t lootdrop_id;
-		int32_t  item_id;
-		uint16_t item_charges;
-		uint8_t  equip_item;
-		float    chance;
-		int8_t   minlevel;
-		uint8_t  maxlevel;
-		uint8_t  multiplier;
-		float    disabled_chance;
-		float    min_expansion;
-		float    max_expansion;
-		uint32_t min_looter_level;
-		uint32_t item_loot_lockout_timer;
+		uint32_t    lootdrop_id;
+		int32_t     item_id;
+		uint16_t    item_charges;
+		uint8_t     equip_item;
+		float       chance;
+		int8_t      minlevel;
+		uint8_t     maxlevel;
+		uint8_t     multiplier;
+		float       disabled_chance;
+		float       min_expansion;
+		float       max_expansion;
+		uint32_t    min_looter_level;
+		uint32_t    item_loot_lockout_timer;
+		std::string content_flags_disabled;
+		std::string content_flags;
 	};
 
 	static std::string PrimaryKey()
@@ -55,6 +57,8 @@ public:
 			"max_expansion",
 			"min_looter_level",
 			"item_loot_lockout_timer",
+			"content_flags_disabled",
+			"content_flags",
 		};
 	}
 
@@ -74,6 +78,8 @@ public:
 			"max_expansion",
 			"min_looter_level",
 			"item_loot_lockout_timer",
+			"content_flags_disabled",
+			"content_flags",
 		};
 	}
 
@@ -127,6 +133,8 @@ public:
 		e.max_expansion           = -1;
 		e.min_looter_level        = 0;
 		e.item_loot_lockout_timer = 0;
+		e.content_flags_disabled  = "";
+		e.content_flags           = "";
 
 		return e;
 	}
@@ -176,6 +184,8 @@ public:
 			e.max_expansion           = row[10] ? strtof(row[10], nullptr) : -1;
 			e.min_looter_level        = row[11] ? static_cast<uint32_t>(strtoul(row[11], nullptr, 10)) : 0;
 			e.item_loot_lockout_timer = row[12] ? static_cast<uint32_t>(strtoul(row[12], nullptr, 10)) : 0;
+			e.content_flags_disabled  = row[13] ? row[13] : "";
+			e.content_flags           = row[14] ? row[14] : "";
 
 			return e;
 		}
@@ -222,6 +232,8 @@ public:
 		v.push_back(columns[10] + " = " + std::to_string(e.max_expansion));
 		v.push_back(columns[11] + " = " + std::to_string(e.min_looter_level));
 		v.push_back(columns[12] + " = " + std::to_string(e.item_loot_lockout_timer));
+		v.push_back(columns[13] + " = '" + Strings::Escape(e.content_flags_disabled) + "'");
+		v.push_back(columns[14] + " = '" + Strings::Escape(e.content_flags) + "'");
 
 		auto results = db.QueryDatabase(
 			fmt::format(
@@ -256,6 +268,8 @@ public:
 		v.push_back(std::to_string(e.max_expansion));
 		v.push_back(std::to_string(e.min_looter_level));
 		v.push_back(std::to_string(e.item_loot_lockout_timer));
+		v.push_back("'" + Strings::Escape(e.content_flags_disabled) + "'");
+		v.push_back("'" + Strings::Escape(e.content_flags) + "'");
 
 		auto results = db.QueryDatabase(
 			fmt::format(
@@ -298,6 +312,8 @@ public:
 			v.push_back(std::to_string(e.max_expansion));
 			v.push_back(std::to_string(e.min_looter_level));
 			v.push_back(std::to_string(e.item_loot_lockout_timer));
+			v.push_back("'" + Strings::Escape(e.content_flags_disabled) + "'");
+			v.push_back("'" + Strings::Escape(e.content_flags) + "'");
 
 			insert_chunks.push_back("(" + Strings::Implode(",", v) + ")");
 		}
@@ -344,6 +360,8 @@ public:
 			e.max_expansion           = row[10] ? strtof(row[10], nullptr) : -1;
 			e.min_looter_level        = row[11] ? static_cast<uint32_t>(strtoul(row[11], nullptr, 10)) : 0;
 			e.item_loot_lockout_timer = row[12] ? static_cast<uint32_t>(strtoul(row[12], nullptr, 10)) : 0;
+			e.content_flags_disabled  = row[13] ? row[13] : "";
+			e.content_flags           = row[14] ? row[14] : "";
 
 			all_entries.push_back(e);
 		}
@@ -381,6 +399,8 @@ public:
 			e.max_expansion           = row[10] ? strtof(row[10], nullptr) : -1;
 			e.min_looter_level        = row[11] ? static_cast<uint32_t>(strtoul(row[11], nullptr, 10)) : 0;
 			e.item_loot_lockout_timer = row[12] ? static_cast<uint32_t>(strtoul(row[12], nullptr, 10)) : 0;
+			e.content_flags_disabled  = row[13] ? row[13] : "";
+			e.content_flags           = row[14] ? row[14] : "";
 
 			all_entries.push_back(e);
 		}

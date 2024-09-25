@@ -19,16 +19,20 @@
 class BaseNpcSpellsEntriesRepository {
 public:
 	struct NpcSpellsEntries {
-		uint32_t id;
-		int32_t  npc_spells_id;
-		int16_t  spellid;
-		uint16_t type;
-		uint8_t  minlevel;
-		uint8_t  maxlevel;
-		int16_t  manacost;
-		int32_t  recast_delay;
-		int16_t  priority;
-		int32_t  resist_adjust;
+		uint32_t    id;
+		int32_t     npc_spells_id;
+		int16_t     spellid;
+		uint16_t    type;
+		uint8_t     minlevel;
+		uint8_t     maxlevel;
+		int16_t     manacost;
+		int32_t     recast_delay;
+		int16_t     priority;
+		int32_t     resist_adjust;
+		float       min_expansion;
+		float       max_expansion;
+		std::string content_flags;
+		std::string content_flags_disabled;
 	};
 
 	static std::string PrimaryKey()
@@ -49,6 +53,10 @@ public:
 			"recast_delay",
 			"priority",
 			"resist_adjust",
+			"min_expansion",
+			"max_expansion",
+			"content_flags",
+			"content_flags_disabled",
 		};
 	}
 
@@ -65,6 +73,10 @@ public:
 			"recast_delay",
 			"priority",
 			"resist_adjust",
+			"min_expansion",
+			"max_expansion",
+			"content_flags",
+			"content_flags_disabled",
 		};
 	}
 
@@ -105,16 +117,20 @@ public:
 	{
 		NpcSpellsEntries e{};
 
-		e.id            = 0;
-		e.npc_spells_id = 0;
-		e.spellid       = 0;
-		e.type          = 0;
-		e.minlevel      = 0;
-		e.maxlevel      = 255;
-		e.manacost      = -1;
-		e.recast_delay  = -1;
-		e.priority      = 0;
-		e.resist_adjust = 0;
+		e.id                     = 0;
+		e.npc_spells_id          = 0;
+		e.spellid                = 0;
+		e.type                   = 0;
+		e.minlevel               = 0;
+		e.maxlevel               = 255;
+		e.manacost               = -1;
+		e.recast_delay           = -1;
+		e.priority               = 0;
+		e.resist_adjust          = 0;
+		e.min_expansion          = -1;
+		e.max_expansion          = -1;
+		e.content_flags          = "";
+		e.content_flags_disabled = "";
 
 		return e;
 	}
@@ -151,16 +167,20 @@ public:
 		if (results.RowCount() == 1) {
 			NpcSpellsEntries e{};
 
-			e.id            = row[0] ? static_cast<uint32_t>(strtoul(row[0], nullptr, 10)) : 0;
-			e.npc_spells_id = row[1] ? static_cast<int32_t>(atoi(row[1])) : 0;
-			e.spellid       = row[2] ? static_cast<int16_t>(atoi(row[2])) : 0;
-			e.type          = row[3] ? static_cast<uint16_t>(strtoul(row[3], nullptr, 10)) : 0;
-			e.minlevel      = row[4] ? static_cast<uint8_t>(strtoul(row[4], nullptr, 10)) : 0;
-			e.maxlevel      = row[5] ? static_cast<uint8_t>(strtoul(row[5], nullptr, 10)) : 255;
-			e.manacost      = row[6] ? static_cast<int16_t>(atoi(row[6])) : -1;
-			e.recast_delay  = row[7] ? static_cast<int32_t>(atoi(row[7])) : -1;
-			e.priority      = row[8] ? static_cast<int16_t>(atoi(row[8])) : 0;
-			e.resist_adjust = row[9] ? static_cast<int32_t>(atoi(row[9])) : 0;
+			e.id                     = row[0] ? static_cast<uint32_t>(strtoul(row[0], nullptr, 10)) : 0;
+			e.npc_spells_id          = row[1] ? static_cast<int32_t>(atoi(row[1])) : 0;
+			e.spellid                = row[2] ? static_cast<int16_t>(atoi(row[2])) : 0;
+			e.type                   = row[3] ? static_cast<uint16_t>(strtoul(row[3], nullptr, 10)) : 0;
+			e.minlevel               = row[4] ? static_cast<uint8_t>(strtoul(row[4], nullptr, 10)) : 0;
+			e.maxlevel               = row[5] ? static_cast<uint8_t>(strtoul(row[5], nullptr, 10)) : 255;
+			e.manacost               = row[6] ? static_cast<int16_t>(atoi(row[6])) : -1;
+			e.recast_delay           = row[7] ? static_cast<int32_t>(atoi(row[7])) : -1;
+			e.priority               = row[8] ? static_cast<int16_t>(atoi(row[8])) : 0;
+			e.resist_adjust          = row[9] ? static_cast<int32_t>(atoi(row[9])) : 0;
+			e.min_expansion          = row[10] ? strtof(row[10], nullptr) : -1;
+			e.max_expansion          = row[11] ? strtof(row[11], nullptr) : -1;
+			e.content_flags          = row[12] ? row[12] : "";
+			e.content_flags_disabled = row[13] ? row[13] : "";
 
 			return e;
 		}
@@ -203,6 +223,10 @@ public:
 		v.push_back(columns[7] + " = " + std::to_string(e.recast_delay));
 		v.push_back(columns[8] + " = " + std::to_string(e.priority));
 		v.push_back(columns[9] + " = " + std::to_string(e.resist_adjust));
+		v.push_back(columns[10] + " = " + std::to_string(e.min_expansion));
+		v.push_back(columns[11] + " = " + std::to_string(e.max_expansion));
+		v.push_back(columns[12] + " = '" + Strings::Escape(e.content_flags) + "'");
+		v.push_back(columns[13] + " = '" + Strings::Escape(e.content_flags_disabled) + "'");
 
 		auto results = db.QueryDatabase(
 			fmt::format(
@@ -234,6 +258,10 @@ public:
 		v.push_back(std::to_string(e.recast_delay));
 		v.push_back(std::to_string(e.priority));
 		v.push_back(std::to_string(e.resist_adjust));
+		v.push_back(std::to_string(e.min_expansion));
+		v.push_back(std::to_string(e.max_expansion));
+		v.push_back("'" + Strings::Escape(e.content_flags) + "'");
+		v.push_back("'" + Strings::Escape(e.content_flags_disabled) + "'");
 
 		auto results = db.QueryDatabase(
 			fmt::format(
@@ -273,6 +301,10 @@ public:
 			v.push_back(std::to_string(e.recast_delay));
 			v.push_back(std::to_string(e.priority));
 			v.push_back(std::to_string(e.resist_adjust));
+			v.push_back(std::to_string(e.min_expansion));
+			v.push_back(std::to_string(e.max_expansion));
+			v.push_back("'" + Strings::Escape(e.content_flags) + "'");
+			v.push_back("'" + Strings::Escape(e.content_flags_disabled) + "'");
 
 			insert_chunks.push_back("(" + Strings::Implode(",", v) + ")");
 		}
@@ -306,16 +338,20 @@ public:
 		for (auto row = results.begin(); row != results.end(); ++row) {
 			NpcSpellsEntries e{};
 
-			e.id            = row[0] ? static_cast<uint32_t>(strtoul(row[0], nullptr, 10)) : 0;
-			e.npc_spells_id = row[1] ? static_cast<int32_t>(atoi(row[1])) : 0;
-			e.spellid       = row[2] ? static_cast<int16_t>(atoi(row[2])) : 0;
-			e.type          = row[3] ? static_cast<uint16_t>(strtoul(row[3], nullptr, 10)) : 0;
-			e.minlevel      = row[4] ? static_cast<uint8_t>(strtoul(row[4], nullptr, 10)) : 0;
-			e.maxlevel      = row[5] ? static_cast<uint8_t>(strtoul(row[5], nullptr, 10)) : 255;
-			e.manacost      = row[6] ? static_cast<int16_t>(atoi(row[6])) : -1;
-			e.recast_delay  = row[7] ? static_cast<int32_t>(atoi(row[7])) : -1;
-			e.priority      = row[8] ? static_cast<int16_t>(atoi(row[8])) : 0;
-			e.resist_adjust = row[9] ? static_cast<int32_t>(atoi(row[9])) : 0;
+			e.id                     = row[0] ? static_cast<uint32_t>(strtoul(row[0], nullptr, 10)) : 0;
+			e.npc_spells_id          = row[1] ? static_cast<int32_t>(atoi(row[1])) : 0;
+			e.spellid                = row[2] ? static_cast<int16_t>(atoi(row[2])) : 0;
+			e.type                   = row[3] ? static_cast<uint16_t>(strtoul(row[3], nullptr, 10)) : 0;
+			e.minlevel               = row[4] ? static_cast<uint8_t>(strtoul(row[4], nullptr, 10)) : 0;
+			e.maxlevel               = row[5] ? static_cast<uint8_t>(strtoul(row[5], nullptr, 10)) : 255;
+			e.manacost               = row[6] ? static_cast<int16_t>(atoi(row[6])) : -1;
+			e.recast_delay           = row[7] ? static_cast<int32_t>(atoi(row[7])) : -1;
+			e.priority               = row[8] ? static_cast<int16_t>(atoi(row[8])) : 0;
+			e.resist_adjust          = row[9] ? static_cast<int32_t>(atoi(row[9])) : 0;
+			e.min_expansion          = row[10] ? strtof(row[10], nullptr) : -1;
+			e.max_expansion          = row[11] ? strtof(row[11], nullptr) : -1;
+			e.content_flags          = row[12] ? row[12] : "";
+			e.content_flags_disabled = row[13] ? row[13] : "";
 
 			all_entries.push_back(e);
 		}
@@ -340,16 +376,20 @@ public:
 		for (auto row = results.begin(); row != results.end(); ++row) {
 			NpcSpellsEntries e{};
 
-			e.id            = row[0] ? static_cast<uint32_t>(strtoul(row[0], nullptr, 10)) : 0;
-			e.npc_spells_id = row[1] ? static_cast<int32_t>(atoi(row[1])) : 0;
-			e.spellid       = row[2] ? static_cast<int16_t>(atoi(row[2])) : 0;
-			e.type          = row[3] ? static_cast<uint16_t>(strtoul(row[3], nullptr, 10)) : 0;
-			e.minlevel      = row[4] ? static_cast<uint8_t>(strtoul(row[4], nullptr, 10)) : 0;
-			e.maxlevel      = row[5] ? static_cast<uint8_t>(strtoul(row[5], nullptr, 10)) : 255;
-			e.manacost      = row[6] ? static_cast<int16_t>(atoi(row[6])) : -1;
-			e.recast_delay  = row[7] ? static_cast<int32_t>(atoi(row[7])) : -1;
-			e.priority      = row[8] ? static_cast<int16_t>(atoi(row[8])) : 0;
-			e.resist_adjust = row[9] ? static_cast<int32_t>(atoi(row[9])) : 0;
+			e.id                     = row[0] ? static_cast<uint32_t>(strtoul(row[0], nullptr, 10)) : 0;
+			e.npc_spells_id          = row[1] ? static_cast<int32_t>(atoi(row[1])) : 0;
+			e.spellid                = row[2] ? static_cast<int16_t>(atoi(row[2])) : 0;
+			e.type                   = row[3] ? static_cast<uint16_t>(strtoul(row[3], nullptr, 10)) : 0;
+			e.minlevel               = row[4] ? static_cast<uint8_t>(strtoul(row[4], nullptr, 10)) : 0;
+			e.maxlevel               = row[5] ? static_cast<uint8_t>(strtoul(row[5], nullptr, 10)) : 255;
+			e.manacost               = row[6] ? static_cast<int16_t>(atoi(row[6])) : -1;
+			e.recast_delay           = row[7] ? static_cast<int32_t>(atoi(row[7])) : -1;
+			e.priority               = row[8] ? static_cast<int16_t>(atoi(row[8])) : 0;
+			e.resist_adjust          = row[9] ? static_cast<int32_t>(atoi(row[9])) : 0;
+			e.min_expansion          = row[10] ? strtof(row[10], nullptr) : -1;
+			e.max_expansion          = row[11] ? strtof(row[11], nullptr) : -1;
+			e.content_flags          = row[12] ? row[12] : "";
+			e.content_flags_disabled = row[13] ? row[13] : "";
 
 			all_entries.push_back(e);
 		}

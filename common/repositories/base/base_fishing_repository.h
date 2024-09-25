@@ -24,10 +24,10 @@ public:
 		int32_t     Itemid;
 		int16_t     skill_level;
 		int16_t     chance;
-		std::string content_flags;
-		std::string content_flags_disabled;
 		float       min_expansion;
 		float       max_expansion;
+		std::string content_flags;
+		std::string content_flags_disabled;
 	};
 
 	static std::string PrimaryKey()
@@ -43,10 +43,10 @@ public:
 			"Itemid",
 			"skill_level",
 			"chance",
-			"content_flags",
-			"content_flags_disabled",
 			"min_expansion",
 			"max_expansion",
+			"content_flags",
+			"content_flags_disabled",
 		};
 	}
 
@@ -58,10 +58,10 @@ public:
 			"Itemid",
 			"skill_level",
 			"chance",
-			"content_flags",
-			"content_flags_disabled",
 			"min_expansion",
 			"max_expansion",
+			"content_flags",
+			"content_flags_disabled",
 		};
 	}
 
@@ -107,10 +107,10 @@ public:
 		e.Itemid                 = 0;
 		e.skill_level            = 0;
 		e.chance                 = 0;
-		e.content_flags          = "";
-		e.content_flags_disabled = "";
 		e.min_expansion          = -1;
 		e.max_expansion          = -1;
+		e.content_flags          = "";
+		e.content_flags_disabled = "";
 
 		return e;
 	}
@@ -152,10 +152,10 @@ public:
 			e.Itemid                 = row[2] ? static_cast<int32_t>(atoi(row[2])) : 0;
 			e.skill_level            = row[3] ? static_cast<int16_t>(atoi(row[3])) : 0;
 			e.chance                 = row[4] ? static_cast<int16_t>(atoi(row[4])) : 0;
-			e.content_flags          = row[5] ? row[5] : "";
-			e.content_flags_disabled = row[6] ? row[6] : "";
-			e.min_expansion          = row[7] ? strtof(row[7], nullptr) : -1;
-			e.max_expansion          = row[8] ? strtof(row[8], nullptr) : -1;
+			e.min_expansion          = row[5] ? strtof(row[5], nullptr) : -1;
+			e.max_expansion          = row[6] ? strtof(row[6], nullptr) : -1;
+			e.content_flags          = row[7] ? row[7] : "";
+			e.content_flags_disabled = row[8] ? row[8] : "";
 
 			return e;
 		}
@@ -193,10 +193,10 @@ public:
 		v.push_back(columns[2] + " = " + std::to_string(e.Itemid));
 		v.push_back(columns[3] + " = " + std::to_string(e.skill_level));
 		v.push_back(columns[4] + " = " + std::to_string(e.chance));
-		v.push_back(columns[5] + " = '" + Strings::Escape(e.content_flags) + "'");
-		v.push_back(columns[6] + " = '" + Strings::Escape(e.content_flags_disabled) + "'");
-		v.push_back(columns[7] + " = " + std::to_string(e.min_expansion));
-		v.push_back(columns[8] + " = " + std::to_string(e.max_expansion));
+		v.push_back(columns[5] + " = " + std::to_string(e.min_expansion));
+		v.push_back(columns[6] + " = " + std::to_string(e.max_expansion));
+		v.push_back(columns[7] + " = '" + Strings::Escape(e.content_flags) + "'");
+		v.push_back(columns[8] + " = '" + Strings::Escape(e.content_flags_disabled) + "'");
 
 		auto results = db.QueryDatabase(
 			fmt::format(
@@ -223,10 +223,10 @@ public:
 		v.push_back(std::to_string(e.Itemid));
 		v.push_back(std::to_string(e.skill_level));
 		v.push_back(std::to_string(e.chance));
-		v.push_back("'" + Strings::Escape(e.content_flags) + "'");
-		v.push_back("'" + Strings::Escape(e.content_flags_disabled) + "'");
 		v.push_back(std::to_string(e.min_expansion));
 		v.push_back(std::to_string(e.max_expansion));
+		v.push_back("'" + Strings::Escape(e.content_flags) + "'");
+		v.push_back("'" + Strings::Escape(e.content_flags_disabled) + "'");
 
 		auto results = db.QueryDatabase(
 			fmt::format(
@@ -261,10 +261,10 @@ public:
 			v.push_back(std::to_string(e.Itemid));
 			v.push_back(std::to_string(e.skill_level));
 			v.push_back(std::to_string(e.chance));
-			v.push_back("'" + Strings::Escape(e.content_flags) + "'");
-			v.push_back("'" + Strings::Escape(e.content_flags_disabled) + "'");
 			v.push_back(std::to_string(e.min_expansion));
 			v.push_back(std::to_string(e.max_expansion));
+			v.push_back("'" + Strings::Escape(e.content_flags) + "'");
+			v.push_back("'" + Strings::Escape(e.content_flags_disabled) + "'");
 
 			insert_chunks.push_back("(" + Strings::Implode(",", v) + ")");
 		}
@@ -303,10 +303,10 @@ public:
 			e.Itemid                 = row[2] ? static_cast<int32_t>(atoi(row[2])) : 0;
 			e.skill_level            = row[3] ? static_cast<int16_t>(atoi(row[3])) : 0;
 			e.chance                 = row[4] ? static_cast<int16_t>(atoi(row[4])) : 0;
-			e.content_flags          = row[5] ? row[5] : "";
-			e.content_flags_disabled = row[6] ? row[6] : "";
-			e.min_expansion          = row[7] ? strtof(row[7], nullptr) : -1;
-			e.max_expansion          = row[8] ? strtof(row[8], nullptr) : -1;
+			e.min_expansion          = row[5] ? strtof(row[5], nullptr) : -1;
+			e.max_expansion          = row[6] ? strtof(row[6], nullptr) : -1;
+			e.content_flags          = row[7] ? row[7] : "";
+			e.content_flags_disabled = row[8] ? row[8] : "";
 
 			all_entries.push_back(e);
 		}
@@ -336,10 +336,10 @@ public:
 			e.Itemid                 = row[2] ? static_cast<int32_t>(atoi(row[2])) : 0;
 			e.skill_level            = row[3] ? static_cast<int16_t>(atoi(row[3])) : 0;
 			e.chance                 = row[4] ? static_cast<int16_t>(atoi(row[4])) : 0;
-			e.content_flags          = row[5] ? row[5] : "";
-			e.content_flags_disabled = row[6] ? row[6] : "";
-			e.min_expansion          = row[7] ? strtof(row[7], nullptr) : -1;
-			e.max_expansion          = row[8] ? strtof(row[8], nullptr) : -1;
+			e.min_expansion          = row[5] ? strtof(row[5], nullptr) : -1;
+			e.max_expansion          = row[6] ? strtof(row[6], nullptr) : -1;
+			e.content_flags          = row[7] ? row[7] : "";
+			e.content_flags_disabled = row[8] ? row[8] : "";
 
 			all_entries.push_back(e);
 		}

@@ -2187,7 +2187,7 @@ void Client::Handle_OP_AutoAttack(const EQApplicationPacket *app)
 
 	if (Admin() > 0)
 	{
-		Message(CC_Red, "You cannot autoattack as a GM.");
+		Message(Chat::Red, "You cannot autoattack as a GM.");
 		return;
 	}
 
@@ -2712,7 +2712,7 @@ void Client::Handle_OP_CastSpell(const EQApplicationPacket *app)
 
 	if (Admin() > 0)
 	{
-		Message(CC_Red, "You cannot cast spells as a GM.");
+		Message(Chat::Red, "You cannot cast spells as a GM.");
 		InterruptSpell(castspell->spell_id);
 		return;
 	}
@@ -2773,8 +2773,8 @@ void Client::Handle_OP_CastSpell(const EQApplicationPacket *app)
 
 			if (castspell->spell_id == SPELL_MANA_CONVERT && !zone->AllowManastoneClick())
 			{
-				Message_StringID(CC_Red, SPELL_DOES_NOT_WORK_HERE);
-				InterruptSpell(SPELL_RECAST, CC_User_SpellFailure, castspell->spell_id);
+				Message_StringID(Chat::Red, SPELL_DOES_NOT_WORK_HERE);
+				InterruptSpell(SPELL_RECAST, Chat::SpellFailure, castspell->spell_id);
 				return;
 			}
 
@@ -3006,7 +3006,7 @@ void Client::Handle_OP_ClickObject(const EQApplicationPacket *app)
 			}
 			if (!msg.empty())
 			{
-				Message(CC_Red, msg.c_str());
+				Message(Chat::Red, msg.c_str());
 				auto outapp = new EQApplicationPacket(OP_ClickObject, sizeof(ClickObject_Struct));
 				ClickObject_Struct* loreitem = (ClickObject_Struct*)outapp->pBuffer;
 				loreitem->player_id = click_object->player_id;
@@ -3166,7 +3166,7 @@ void Client::Handle_OP_ClientUpdate(const EQApplicationPacket *app)
 	m_EQPosition = glm::vec4(ppu->x_pos, ppu->y_pos, (float)ppu->z_pos/10.0f, ppu->heading);
 
 	if (GetZoneID() == Zones::AIRPLANE && m_EQPosition.z < -1200.0f) {
-		MovePCGuildID(Zones::FREPORTE, -1570.0f, -25.0f, 20.0f, 231.0f);
+		MovePCGuildID(Zones::FREPORTE, GUILD_NONE, -1570.0f, -25.0f, 20.0f, 231.0f);
 		return;
 	}
 
@@ -3273,7 +3273,7 @@ void Client::Handle_OP_ClientUpdate(const EQApplicationPacket *app)
 			{
 
 				std::string warped = std::string(GetCleanName()) + " - entity moving too fast: dist: " + std::to_string(dist) + ", distDivTime: " + std::to_string(distDivTime) + "playerSpeed: " + std::to_string(speed);
-				worldserver.SendEmoteMessage(0, 0, 100, CC_Default, "%s - entity moving too fast: %lf %lf - is_exempt_correct %s, playerSpeed %lf", GetCleanName(), dist, distDivTime, std::to_string(is_exempt_correct).c_str(), speed);
+				worldserver.SendEmoteMessage(0, 0, 100, Chat::Default, "%s - entity moving too fast: %lf %lf - is_exempt_correct %s, playerSpeed %lf", GetCleanName(), dist, distDivTime, std::to_string(is_exempt_correct).c_str(), speed);
 				database.SetHackerFlag(this->account_name, this->name, warped.c_str());
 			}
 		}
@@ -3407,7 +3407,7 @@ void Client::Handle_OP_CombatAbility(const EQApplicationPacket *app)
 
 	if (Admin() > 0)
 	{
-		Message(CC_Red, "You cannot use abilities or thrown items as a GM.");
+		Message(Chat::Red, "You cannot use abilities or thrown items as a GM.");
 		return;
 	}
 
@@ -3815,7 +3815,7 @@ void Client::Handle_OP_CorpseDrop(const EQApplicationPacket *app)
 {
 	if (app->size == 1 || app->size == 0)
 	{
-		Message_StringID(CC_Default, CORPSEDRAG_STOPALL);
+		Message_StringID(Chat::Default, CORPSEDRAG_STOPALL);
 		ClearDraggedCorpses();
 		return;
 	}
@@ -3843,14 +3843,14 @@ void Client::Handle_OP_CorpseDrop(const EQApplicationPacket *app)
 				if (!strcasecmp(It->first.c_str(), cds->CorpseName))
 				{
 					It = DraggedCorpses.erase(It);
-					Message_StringID(MT_DefaultText, CORPSEDRAG_STOP, corpse->GetCleanName());
+					Message_StringID(Chat::DefaultText, CORPSEDRAG_STOP, corpse->GetCleanName());
 					return;
 				}
 			}
 
 		}
 		else
-			Message_StringID(MT_DefaultText, CORPSEDRAG_SOMEONE_ELSE, corpse->GetCleanName());
+			Message_StringID(Chat::DefaultText, CORPSEDRAG_SOMEONE_ELSE, corpse->GetCleanName());
 		return;
 	}
 }
@@ -3875,7 +3875,7 @@ void Client::Handle_OP_CreateObject(const EQApplicationPacket *app)
 		if (inst)
 		{
 			std::string msg = "You cannot drop items as a GM. The emulator has had enough issues with that.";
-			Message(CC_Red, msg.c_str());
+			Message(Chat::Red, msg.c_str());
 			SendItemPacket(EQ::invslot::slotCursor, inst, ItemPacketSummonItem);
 		}
 		return;
@@ -3887,7 +3887,7 @@ void Client::Handle_OP_CreateObject(const EQApplicationPacket *app)
 		if (inst)
 		{
 			std::string msg = "You cannot drop items on the ground in guild instances.";
-			Message(CC_Red, msg.c_str());
+			Message(Chat::Red, msg.c_str());
 			SendItemPacket(EQ::invslot::slotCursor, inst, ItemPacketSummonItem);
 		}
 		return;
@@ -4294,7 +4294,7 @@ void Client::Handle_OP_Emote(const EQApplicationPacket *app)
 
 	if (GetRevoked())
 	{
-		Message(CC_Default, "You have been revoked. You may not send Emote messages.");
+		Message(Chat::Default, "You have been revoked. You may not send Emote messages.");
 		return;
 	}
 
@@ -5254,13 +5254,13 @@ void Client::Handle_OP_GroupFollow(const EQApplicationPacket *app)
 
 	if (IsSoloOnly())
 	{
-		Message(CC_Red, "You are solo and thus cannot join a group.");
+		Message(Chat::Red, "You are solo and thus cannot join a group.");
 		return;
 	}
 
 	if (Admin() > 0)
 	{
-		Message(CC_Red, "You are a GM. Do not join raids or groups.");
+		Message(Chat::Red, "You are a GM. Do not join raids or groups.");
 		database.SetHackerFlag(account_name, GetCleanName(), "GM attempted to join a group or raid.");
 		return;
 	}
@@ -5277,19 +5277,19 @@ void Client::Handle_OP_GroupFollow(const EQApplicationPacket *app)
 	{
 		if (inviter->CastToClient()->IsSoloOnly())
 		{
-			Message(CC_Red, "The inviter is solo only. You cannot join.");
+			Message(Chat::Red, "The inviter is solo only. You cannot join.");
 			return;
 		}
 
 		if (IsSelfFound() != inviter->CastToClient()->IsSelfFound())
 		{
-			Message(CC_Red, "The inviting player's self found flag does not match yours. You cannot join the group.");
+			Message(Chat::Red, "The inviting player's self found flag does not match yours. You cannot join the group.");
 			return;
 		}
 
 		if (GetBaseClass() == 0 && GetBaseClass() != inviter->CastToClient()->GetBaseClass())
 		{
-			Message(CC_Red, "Player was null and the invite failed. In this case, quite literally, they're class 0.");
+			Message(Chat::Red, "Player was null and the invite failed. In this case, quite literally, they're class 0.");
 			return;
 		}
 
@@ -5451,13 +5451,13 @@ void Client::Handle_OP_GroupInvite2(const EQApplicationPacket *app)
 
 	if (IsSoloOnly())
 	{
-		Message(CC_Red, "You have solo mode enabled, and cannot group with anyone.");
+		Message(Chat::Red, "You have solo mode enabled, and cannot group with anyone.");
 		return;
 	}
 
 	if (Admin() > 0)
 	{
-		Message(CC_Red, "You are a GM. Do not join raids or groups.");
+		Message(Chat::Red, "You are a GM. Do not join raids or groups.");
 		database.SetHackerFlag(account_name, GetCleanName(), "GM attempted to join a group or raid.");
 		return;
 	}
@@ -5472,23 +5472,23 @@ void Client::Handle_OP_GroupInvite2(const EQApplicationPacket *app)
 		if (Invitee->IsClient()) {
 			if (Invitee->CastToClient()->IsSelfFound() != IsSelfFound())
 			{
-				Message(CC_Red, "This player has a different self found enabled than you do, and cannot group with you.");
+				Message(Chat::Red, "This player has a different self found enabled than you do, and cannot group with you.");
 				return;
 			}
 			if (Invitee->CastToClient()->IsSoloOnly())
 			{
-				Message(CC_Red, "This player has solo mode enabled, and cannot group with you.");
+				Message(Chat::Red, "This player has solo mode enabled, and cannot group with you.");
 				return;
 			}
 
 			if (GetBaseClass() == 0 && Invitee->CastToClient()->GetBaseClass() != GetBaseClass())
 			{
-				Message(CC_Red, "Class was null. Like, literally. Consider them for more information.");
+				Message(Chat::Red, "Class was null. Like, literally. Consider them for more information.");
 				return;
 			}
 			if (Invitee->CastToClient()->Admin() > 0)
 			{
-				Message(CC_Red, "You are being invited by a GM. This will never work.");
+				Message(Chat::Red, "You are being invited by a GM. This will never work.");
 				database.SetHackerFlag(Invitee->CastToClient()->AccountName(), Invitee->CastToClient()->GetCleanName(), "GM attempted to join a group or raid.");
 				return;
 			}
@@ -6365,7 +6365,7 @@ void Client::Handle_OP_LootRequest(const EQApplicationPacket *app)
 		Corpse *ent_corpse = ent->CastToCorpse();
 		if (DistanceSquaredNoZ(m_Position, ent_corpse->GetPosition()) > 1100) // About 33.2 coords away.
 		{
-			Message(CC_Red, "[DEBUG] Too far away from corpse.");
+			Message(Chat::Red, "[DEBUG] Too far away from corpse.");
 			Corpse::SendLootReqErrorPacket(this);
 			return;
 		}
@@ -6844,7 +6844,7 @@ void Client::Handle_OP_PetCommands(const EQApplicationPacket *app)
 void Client::Handle_OP_Petition(const EQApplicationPacket *app)
 {
 	if (!RuleB(Petitions, PetitionSystemActive)) {
-		Message(CC_Default, "Petitionining ingame is disabled. Please report petitions on the server's Discord using the ticketing system there.");
+		Message(Chat::Default, "Petitionining ingame is disabled. Please report petitions on the server's Discord using the ticketing system there.");
 		return;
 	}
 
@@ -6891,7 +6891,7 @@ void Client::Handle_OP_PetitionCheckIn(const EQApplicationPacket *app)
 		return;
 	}
 	if (!RuleB(Petitions, PetitionSystemActive)) {
-		Message(CC_Default, "Petitionining ingame is disabled. Please report petitions on the server's Discord using the ticketing system there.");
+		Message(Chat::Default, "Petitionining ingame is disabled. Please report petitions on the server's Discord using the ticketing system there.");
 		return;
 	}
 
@@ -6917,7 +6917,7 @@ void Client::Handle_OP_PetitionCheckout(const EQApplicationPacket *app)
 		return;
 	}
 	if (!RuleB(Petitions, PetitionSystemActive)) {
-		Message(CC_Default, "Petitionining ingame is disabled. Please report petitions on the server's Discord using the ticketing system there.");
+		Message(Chat::Default, "Petitionining ingame is disabled. Please report petitions on the server's Discord using the ticketing system there.");
 		return;
 	}
 
@@ -6946,7 +6946,7 @@ void Client::Handle_OP_PetitionDelete(const EQApplicationPacket *app)
 	}
 
 	if (!RuleB(Petitions, PetitionSystemActive)) {
-		Message(CC_Default, "Petitionining ingame is disabled. Please report petitions on the server's Discord using the ticketing system there.");
+		Message(Chat::Default, "Petitionining ingame is disabled. Please report petitions on the server's Discord using the ticketing system there.");
 		return;
 	}
 
@@ -7069,13 +7069,13 @@ void Client::Handle_OP_RaidCommand(const EQApplicationPacket *app)
 
 	if (IsSoloOnly())
 	{
-		Message(CC_Red, "You are solo only and cannot be invited to the raid.");
+		Message(Chat::Red, "You are solo only and cannot be invited to the raid.");
 		return;
 	}
 
 	if (Admin() > 0)
 	{
-		Message(CC_Red, "You are a GM. Do not join raids or groups.");
+		Message(Chat::Red, "You are a GM. Do not join raids or groups.");
 		database.SetHackerFlag(account_name, GetCleanName(), "GM attempted to join a group or raid.");
 		return;
 	}
@@ -7093,25 +7093,25 @@ void Client::Handle_OP_RaidCommand(const EQApplicationPacket *app)
 
 			if (i->IsSoloOnly())
 			{
-				Message(CC_Red, "This player is solo only and cannot be invited to the raid.");
+				Message(Chat::Red, "This player is solo only and cannot be invited to the raid.");
 				return;
 			}
 
 			if (i->Admin() > 0)
 			{
-				Message(CC_Red, "This player is a GM and cannot join your raid.");
+				Message(Chat::Red, "This player is a GM and cannot join your raid.");
 				return;
 			}
 
 			if (IsSelfFound() != i->IsSelfFound())
 			{
-				Message(CC_Red, "This player's self found flag does not match yours, and cannot be invited to the raid.");
+				Message(Chat::Red, "This player's self found flag does not match yours, and cannot be invited to the raid.");
 				return;
 			}
 
 			if (GetBaseClass() == 0 && GetBaseClass() != i->GetBaseClass())
 			{
-				Message(CC_Red, "Null exception... like, for a class null joining raids. Cannot join a raid. Like, not because the pointer is invalid (it very well is valid) but..");
+				Message(Chat::Red, "Null exception... like, for a class null joining raids. Cannot join a raid. Like, not because the pointer is invalid (it very well is valid) but..");
 				return;
 			}
 
@@ -7174,7 +7174,7 @@ void Client::Handle_OP_RaidCommand(const EQApplicationPacket *app)
 			strcpy(rg->player_name, ri->player_name);
 			this->QueuePacket(outapp);
 			safe_delete(outapp);
-			Message(CC_Red, "The leader is solo only and cannot be invited to the raid? What's going on here, friend?");
+			Message(Chat::Red, "The leader is solo only and cannot be invited to the raid? What's going on here, friend?");
 			return;
 		}
 
@@ -7188,7 +7188,7 @@ void Client::Handle_OP_RaidCommand(const EQApplicationPacket *app)
 			strcpy(rg->player_name, ri->player_name);
 			this->QueuePacket(outapp);
 			safe_delete(outapp);
-			Message(CC_Red, "The leader player's self found flag does not match yours. You cannot be invited to the raid.");
+			Message(Chat::Red, "The leader player's self found flag does not match yours. You cannot be invited to the raid.");
 			return;
 		}
 
@@ -7202,7 +7202,7 @@ void Client::Handle_OP_RaidCommand(const EQApplicationPacket *app)
 			strcpy(rg->player_name, ri->player_name);
 			this->QueuePacket(outapp);
 			safe_delete(outapp);
-			Message(CC_Red, "Leader player was null? Just kidding, it's actually the case haha.");
+			Message(Chat::Red, "Leader player was null? Just kidding, it's actually the case haha.");
 			return;
 		}
 
@@ -7272,7 +7272,7 @@ void Client::Handle_OP_RaidCommand(const EQApplicationPacket *app)
 
 				if (g && g->GroupCount() < 2)
 				{
-					i->Message(CC_Red, "Invite failed, group does not have enough members to be invited.");
+					i->Message(Chat::Red, "Invite failed, group does not have enough members to be invited.");
 					return;
 				}
 
@@ -7648,7 +7648,7 @@ void Client::Handle_OP_RezzAnswer(const EQApplicationPacket *app)
 		// Send the OP_RezzComplete to the world server. This finds it's way to the zone that
 		// the rezzed corpse is in to mark the corpse as rezzed.
 		outapp->SetOpcode(OP_RezzComplete);
-		worldserver.RezzPlayer(outapp, 0, 0, OP_RezzComplete);
+		worldserver.RezzPlayer(outapp, 0, 0, 0, OP_RezzComplete);
 		safe_delete(outapp);
 	}
 	return;
@@ -8030,14 +8030,6 @@ void Client::Handle_OP_ShopPlayerBuy(const EQApplicationPacket *app)
 				continue;
 			}
 
-			bool expansion_enabled = RuleR(World, CurrentExpansion) >= ml.min_expansion && RuleR(World, CurrentExpansion) < ml.max_expansion;
-			bool expansion_all = ml.min_expansion == ExpansionEras::AllEQEras && ml.max_expansion == ExpansionEras::AllEQEras;
-
-			if (!expansion_enabled && !expansion_all)
-			{
-				continue;
-			}
-
 			const EQ::ItemData* item = database.GetItem(ml.item);
 			if (!item)
 				continue;
@@ -8122,7 +8114,7 @@ void Client::Handle_OP_ShopPlayerBuy(const EQApplicationPacket *app)
 
 	if (zone && zone->GetGuildID() != GUILD_NONE)
 	{
-		Message(CC_Red, "You cannot use merchants in guild instances.");
+		Message(Chat::Red, "You cannot use merchants in guild instances.");
 		QueuePacket(returnapp);
 		safe_delete(returnapp);
 		return;
@@ -8130,7 +8122,7 @@ void Client::Handle_OP_ShopPlayerBuy(const EQApplicationPacket *app)
 
 	if (Admin() > 0 && tmpmer_used)
 	{
-		Message(CC_Red, "That item isn't normally sold here. You are a GM. You'd be griefing players. The gods weep today.");
+		Message(Chat::Red, "That item isn't normally sold here. You are a GM. You'd be griefing players. The gods weep today.");
 		QueuePacket(returnapp);
 		safe_delete(returnapp);
 		return;
@@ -8384,7 +8376,7 @@ void Client::Handle_OP_ShopPlayerSell(const EQApplicationPacket *app)
 
 	if (vendor->CastToNPC()->MerchantType == 1)
 	{
-		Message(CC_Red, "This merchant can only be bought from.");
+		Message(Chat::Red, "This merchant can only be bought from.");
 		auto outapp = new EQApplicationPacket(OP_ShopPlayerSell, sizeof(OldMerchant_Purchase_Struct));
 		OldMerchant_Purchase_Struct* mco = (OldMerchant_Purchase_Struct*)outapp->pBuffer;
 
@@ -8400,7 +8392,7 @@ void Client::Handle_OP_ShopPlayerSell(const EQApplicationPacket *app)
 
 	if (Admin() > 0)
 	{
-		Message(CC_Red, "Just use commands. You're literally a GM, silly goose.");
+		Message(Chat::Red, "Just use commands. You're literally a GM, silly goose.");
 		auto outapp = new EQApplicationPacket(OP_ShopPlayerSell, sizeof(OldMerchant_Purchase_Struct));
 		OldMerchant_Purchase_Struct* mco = (OldMerchant_Purchase_Struct*)outapp->pBuffer;
 
@@ -8416,7 +8408,7 @@ void Client::Handle_OP_ShopPlayerSell(const EQApplicationPacket *app)
 
 	if (zone && zone->GetGuildID() != GUILD_NONE)
 	{
-		Message(CC_Red, "You cannot use merchants within guild instances.");
+		Message(Chat::Red, "You cannot use merchants within guild instances.");
 		auto outapp = new EQApplicationPacket(OP_ShopPlayerSell, sizeof(OldMerchant_Purchase_Struct));
 		OldMerchant_Purchase_Struct* mco = (OldMerchant_Purchase_Struct*)outapp->pBuffer;
 
@@ -9270,7 +9262,7 @@ void Client::Handle_OP_Trader(const EQApplicationPacket *app)
 
 	if (Admin() > 0)
 	{
-		Message(CC_Red, "You are a GM. You cannot use the bazaar. Use the dev server for that.");
+		Message(Chat::Red, "You are a GM. You cannot use the bazaar. Use the dev server for that.");
 		return;
 	}
 
@@ -9328,12 +9320,12 @@ void Client::Handle_OP_Trader(const EQApplicationPacket *app)
 		{
 			if (IsSoloOnly() || IsSelfFound())
 			{
-				Message(CC_Red, "You are solo or self found only, and cannot list or sell items in The Bazaar.");
+				Message(Chat::Red, "You are solo or self found only, and cannot list or sell items in The Bazaar.");
 				return;
 			}
 			if (Admin() > 0)
 			{
-				Message(CC_Red, "You are a GM. You cannot list items for sale. Use the dev server for that.");
+				Message(Chat::Red, "You are a GM. You cannot list items for sale. Use the dev server for that.");
 				database.SetHackerFlag(account_name, GetCleanName(), "GM attempted to sell an item on the Bazaar.");
 				return;
 			}
@@ -9475,13 +9467,13 @@ void Client::Handle_OP_TraderBuy(const EQApplicationPacket *app)
 	if (IsSoloOnly() || IsSelfFound())
 	{
 		TradeRequestFailed(app);
-		Message(CC_Red, "You are solo or self found only, and cannot purchase items from The Bazaar.");
+		Message(Chat::Red, "You are solo or self found only, and cannot purchase items from The Bazaar.");
 		return;
 	}
 
 	if (Admin() > 0)
 	{
-		Message(CC_Red, "You are a GM. You cannot list items for sale. Use the dev server for that.");
+		Message(Chat::Red, "You are a GM. You cannot list items for sale. Use the dev server for that.");
 		database.SetHackerFlag(account_name, GetCleanName(), "GM attempted to sell an item on the Bazaar.");
 		return;
 	}
@@ -9555,7 +9547,7 @@ void Client::Handle_OP_TradeRequest(const EQApplicationPacket *app)
 
 		if (IsSoloOnly())
 		{
-			Message(CC_Red, "You are doing a solo-self-found run. You cannot trade with other players.");
+			Message(Chat::Red, "You are doing a solo-self-found run. You cannot trade with other players.");
 			FinishTrade(this);
 			trade->Reset();
 			return;
@@ -9563,7 +9555,7 @@ void Client::Handle_OP_TradeRequest(const EQApplicationPacket *app)
 
 		if (Admin() > 0)
 		{
-			Message(CC_Red, "You are a GM. You cannot trade with other players. Use the dev server for that.");
+			Message(Chat::Red, "You are a GM. You cannot trade with other players. Use the dev server for that.");
 			database.SetHackerFlag(account_name, GetCleanName(), "GM attempted to trade with another player instead of using GM commands.");
 			return;
 		}
@@ -9571,7 +9563,7 @@ void Client::Handle_OP_TradeRequest(const EQApplicationPacket *app)
 
 		if (tradee->CastToClient()->IsSoloOnly())
 		{
-			Message(CC_Red, "Your trade partner is doing a solo-self-found run. You cannot trade with them.");
+			Message(Chat::Red, "Your trade partner is doing a solo-self-found run. You cannot trade with them.");
 			FinishTrade(this);
 			trade->Reset();
 			return;
@@ -9579,13 +9571,13 @@ void Client::Handle_OP_TradeRequest(const EQApplicationPacket *app)
 
 		if (tradee->CastToClient()->Admin() > 0)
 		{
-			Message(CC_User_YouMissOther, "You attempt to trade with a GM, but miss!");
+			Message(Chat::YouMissOther, "You attempt to trade with a GM, but miss!");
 			return;
 		}
 
 		if (tradee->CastToClient()->IsSelfFound() == true || IsSelfFound() == true)
 		{
-			Message(CC_Red, "This player is doing a self found run. You cannot trade with them.");
+			Message(Chat::Red, "This player is doing a self found run. You cannot trade with them.");
 			FinishTrade(this);
 			trade->Reset();
 			return;
@@ -9907,7 +9899,7 @@ void Client::Handle_OP_Disarm(const EQApplicationPacket *app)
 
 	if (zone && zone->GetGuildID() != GUILD_NONE)
 	{
-		Message(CC_Red, "You cannot disarm NPCs in this zone.");
+		Message(Chat::Red, "You cannot disarm NPCs in this zone.");
 		return;
 	}
 

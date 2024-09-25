@@ -143,7 +143,7 @@ ZoneServer* ZSList::FindByName(const char* zonename) {
 	while (iterator != zone_server_list.end()) {
 		//Secrets note: 0 is 'magic number' for all zones. For a specific, non-guild zone, use 0xFFFFFFFF
 		//Unbooted zones can still end up with 0. So keep that in mind. Though, in this context they shouldn't have a zonename either.
-		if (strcasecmp((*iterator)->GetZoneName(), zonename) == 0 && ((*iterator)->GetZoneGuildID() == 0 || (*iterator)->->GetZoneGuildID() == 0xFFFFFFFF)) {
+		if (strcasecmp((*iterator)->GetZoneName(), zonename) == 0 && ((*iterator)->GetZoneGuildID() == 0 || (*iterator)->GetZoneGuildID() == 0xFFFFFFFF)) {
 			ZoneServer* tmp = (*iterator).get();
 			return tmp;
 		}
@@ -699,7 +699,7 @@ void ZSList::GetZoneIDList(std::vector<uint32> &zones) {
 void ZSList::WorldShutDown(uint32 time, uint32 interval)
 {
 	if( time > 0 ) {
-		SendEmoteMessage(0, 0, AccountStatus::Player, Chat::Yellow, fmt::format("[SYSTEM] World will be shutting down in {} minutes.", (time / 60)).c_str());
+		SendEmoteMessage(0, 0, AccountStatus::Player, Chat::System, fmt::format("[SYSTEM] World will be shutting down in {} minutes.", (time / 60)).c_str());
 
 		time *= 1000;
 		interval *= 1000;

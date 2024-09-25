@@ -147,7 +147,7 @@ void Object::HandleCombine(Client* user, const Combine_Struct* in_combine, Objec
 		auto tsitem = database.GetItem(itr->first);
 		if (!tsitem)
 		{
-			user->Message(CC_Red, "This combine would result in an item that is out of era or unavailable.");
+			user->Message(Chat::Red, "This combine would result in an item that is out of era or unavailable.");
 			return;
 		}
 		itr++;

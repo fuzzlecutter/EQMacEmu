@@ -75,7 +75,7 @@ typedef enum EmuAppearance {
 namespace Chat {
 	const uint16 White       = 0;
 	const uint16 DimGray     = 1;
-	const uint16 Default     = 1;
+	const uint16 Default     = 0;
 	const uint16 Green       = 2;
 	const uint16 BrightBlue  = 3;
 	const uint16 LightBlue   = 4;
@@ -655,6 +655,9 @@ enum ExpansionEras : int
 	PlanesEQEra = 4,
 	PostPlanesEra = 5
 };
+
+static constexpr float AllEQErasFloat = -1.0f;
+static constexpr float ClassicEQEraFloat = 0.0f;
 
 static const uint32 MAX_SPELL_DB_ID_VAL = 65535;
 

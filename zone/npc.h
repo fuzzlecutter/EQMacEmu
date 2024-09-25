@@ -229,7 +229,6 @@ public:
 
 	void	DeleteEquipment(int16 slotid);
 	virtual void UpdateEquipmentLight();
-	inline bool DropsGlobalLoot() const { return !skip_global_loot; }
 	uint32	GetEquipment(uint8 material_slot) const;	// returns item id
 	int32	GetEquipmentMaterial(uint8 material_slot) const;
 
@@ -470,6 +469,9 @@ public:
 	uint32 solo_raid_fte;
 	uint32 solo_group_fte;
 	uint32 solo_fte_charid;
+
+	// names of first raid members that may be later permitted to loot who aggroed this NPC
+	std::vector<std::string> sf_fte_list;
 
 	bool ValidateFTE();
 
