@@ -273,7 +273,7 @@ void NPC::DescribeAggro(Client *to_who, Mob *mob, bool verbose) {
 		return;
 	}
 
-	if (GetLevel() < 18 && mob->GetLevelCon(GetLevel()) == CON_GREEN && GetBodyType() != BT_Undead && !IsAggroOnPC()) {
+	if (GetLevel() < 18 && mob->GetLevelCon(GetLevel()) == CON_GREEN && GetBodyType() != BodyType::Undead && !IsAggroOnPC()) {
 		to_who->Message(
 			Chat::White,
 			fmt::format(
@@ -470,7 +470,7 @@ bool Mob::CheckWillAggro(Mob *mob, bool turn_mobs)
 	if
 	(
 		((GetLevel() >= 18)
-		|| (GetBodyType() == BT_Undead)
+		|| (GetBodyType() == BodyType::Undead)
 		|| (CastToNPC()->IsAggroOnPC())
 		|| (mob->IsClient() && mob->CastToClient()->IsSitting())
 		|| (oos->GetLevelCon(GetLevel()) != CON_GREEN))
@@ -601,7 +601,7 @@ bool EntityList::AICheckClientAggro(NPC* aggressor)
 	if (!aggressor)
 		return false;
 
-	bool proxAggro = aggressor->GetSpecialAbility(PROX_AGGRO);
+	bool proxAggro = aggressor->GetSpecialAbility(SpecialAbility::ProximityAggro);
 	bool engaged = aggressor->IsEngaged();
 	bool found = false;
 
@@ -616,7 +616,7 @@ bool EntityList::AICheckClientAggro(NPC* aggressor)
 	{
 		Client *client = it->second;
 
-		if ((client->IsFeigned() && !aggressor->GetSpecialAbility(IMMUNE_FEIGN_DEATH)) || !client->InZone())
+		if ((client->IsFeigned() && !aggressor->GetSpecialAbility(SpecialAbility::FeignDeathImmunity)) || !client->InZone())
 			continue;
 
 		if (!aggressor->CheckAggro(client) && aggressor->CheckWillAggro(client))
@@ -638,7 +638,7 @@ bool EntityList::AICheckNPCAggro(NPC* aggressor)
 	if (!aggressor)
 		return false;
 
-	bool proxAggro = aggressor->GetSpecialAbility(PROX_AGGRO);
+	bool proxAggro = aggressor->GetSpecialAbility(SpecialAbility::ProximityAggro);
 	bool engaged = aggressor->IsEngaged();
 	bool found = false;
 
@@ -678,7 +678,7 @@ bool EntityList::AICheckPetAggro(NPC* aggressor)
 	if (!zone->HasCharmedNPC || aggressor->IsPet())
 		return false;
 
-	bool proxAggro = aggressor->GetSpecialAbility(PROX_AGGRO);
+	bool proxAggro = aggressor->GetSpecialAbility(SpecialAbility::ProximityAggro);
 	bool engaged = aggressor->IsEngaged();
 	bool found = false;
 
@@ -826,7 +826,7 @@ void EntityList::AIYellForHelp(Mob* sender, Mob* attacker)
 		if (!npc)
 			continue;
 
-		if(npc->CheckAggro(attacker) || npc->GetSpecialAbility(IMMUNE_AGGRO))
+		if(npc->CheckAggro(attacker) || npc->GetSpecialAbility(SpecialAbility::AggroImmunity))
 			continue;
 
 		// prevent assists if kiter has pull limit and this NPC had been deaggroed sometime within 30 seconds ago (so almost certainly from his train)
@@ -852,7 +852,7 @@ void EntityList::AIYellForHelp(Mob* sender, Mob* attacker)
 		if (
 			npc != sender
 			&& npc != attacker
-			&& npc->GetClass() != MERCHANT
+			&& npc->GetClass() != Class::Merchant
 			&& npc->GetPrimaryFaction() != 0
 			&& DistanceSquared(npc->GetPosition(), sender->GetPosition()) <= r
 			&& ((!npc->IsPet()) || (npc->IsPet() && npc->GetOwner() && !npc->GetOwner()->IsClient() && npc->GetOwner() == sender)) // If we're a pet we don't react to any calls for help if our owner is a client or if our owner was not the one calling for help.
@@ -924,7 +924,7 @@ bool Mob::IsAttackAllowed(Mob *target, bool isSpellAttack, int16 spellid)
 	if(target->IsZomm())
 		return true;
 
-	if (target->GetSpecialAbility(NO_HARM_FROM_CLIENT) && (IsClient() || (IsPet() && GetOwner()->IsClient())))
+	if (target->GetSpecialAbility(SpecialAbility::HarmFromClientImmunity) && (IsClient() || (IsPet() && GetOwner()->IsClient())))
 		return false;
 
 	// Pets cant attack mezed mobs
@@ -1453,7 +1453,7 @@ bool Mob::CheckLosFN(float posX, float posY, float posZ, float mobSize, Mob* oth
 	glm::vec3 myloc(GetX(), GetY(), GetZ());
 	glm::vec3 oloc(posX, posY, posZ);
 
-	if (IsClient() && (GetRace() == DWARF || GetRace() == GNOME || GetRace() == HALFLING))
+	if (IsClient() && (GetRace() == Race::Dwarf || GetRace() == Race::Gnome || GetRace() == Race::Halfling))
 		myloc.z += 1.0f;
 
 	if(zone->zonemap == nullptr) {
@@ -1672,7 +1672,7 @@ int32 Mob::CheckAggroAmount(uint16 spell_id, Mob* target)
 	}
 
 	// bard spell hate is capped very low.  this was from Live server experiments
-	if (GetClass() == BARD)
+	if (GetClass() == Class::Bard)
 	{
 		if (damage + nonDamageHate > 40)
 		{
@@ -1715,7 +1715,7 @@ int32 Mob::CheckAggroAmount(uint16 spell_id, Mob* target)
 	}
 
 	// spells on 'belly caster' NPCs do no hate if outside of melee range unless spell has no resist check
-	if (spells[spell_id].resisttype != RESIST_NONE && target->GetSpecialAbility(IMMUNE_CASTING_FROM_RANGE) && !CombatRange(target))
+	if (spells[spell_id].resisttype != RESIST_NONE && target->GetSpecialAbility(SpecialAbility::CastingFromRangeImmunity) && !CombatRange(target))
 		return 0;
 
 	return combinedHate;

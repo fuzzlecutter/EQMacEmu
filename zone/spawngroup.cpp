@@ -16,8 +16,8 @@
 	Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
 */
 
+#include <fmt/format.h>
 #include "../common/global_define.h"
-#include "../common/strings.h"
 #include "../common/types.h"
 
 #include "entity.h"
@@ -30,33 +30,49 @@ extern EntityList entity_list;
 extern Zone* zone;
 
 SpawnEntry::SpawnEntry( uint32 in_NPCType, int in_chance, uint8 in_npc_spawn_limit, uint8 in_mintime, uint8 in_maxtime ) {
-	NPCType = in_NPCType;
-	chance = in_chance;
+	NPCType         = in_NPCType;
+	chance          = in_chance;
 	npc_spawn_limit = in_npc_spawn_limit;
-	mintime = in_mintime;
-	maxtime = in_maxtime;
+	mintime         = in_mintime;
+	maxtime         = in_maxtime;
 }
 
-SpawnGroup::SpawnGroup( uint32 in_id, char* name, int in_group_spawn_limit, float maxx, float minx, float maxy, float miny, int delay_in, int despawn_in, uint32 despawn_timer_in, int min_delay_in, bool wp_spawns_in ) {
+SpawnGroup::SpawnGroup(
+	uint32 in_id, 
+	char* name, 
+	int in_group_spawn_limit, 
+	float maxx, 
+	float minx, 
+	float maxy, 
+	float miny, 
+	int delay_in, 
+	int despawn_in, 
+	uint32 despawn_timer_in, 
+	int min_delay_in, 
+	bool wp_spawns_in
+)
+{
 	id = in_id;
-	strn0cpy( name_, name, 120);
+	strn0cpy(name_, name, 120);
 	group_spawn_limit = in_group_spawn_limit;
-	roambox[0]=maxx;
-	roambox[1]=minx;
-	roambox[2]=maxy;
-	roambox[3]=miny;
+	roambox[0] = maxx;
+	roambox[1] = minx;
+	roambox[2] = maxy;
+	roambox[3] = miny;
 
-	if (maxx != 0 || minx != 0 || maxy != 0 || miny != 0)
+	if (maxx != 0 || minx != 0 || maxy != 0 || miny != 0) {
 		roamdist = true;
-	else
+	}
+	else {
 		roamdist = false;
-	min_delay=min_delay_in;
-	delay=delay_in;
-	despawn=despawn_in;
-	despawn_timer=despawn_timer_in;
-	skipped_spawn = 0;
+	}
+	min_delay      = min_delay_in;
+	delay          = delay_in;
+	despawn        = despawn_in;
+	despawn_timer  = despawn_timer_in;
+	skipped_spawn  = 0;
 	initial_loaded = 0;
-	wp_spawns = wp_spawns_in;
+	wp_spawns      = wp_spawns_in;
 }
 
 uint32 SpawnGroup::GetNPCType(uint32& rtime, uint32 spawn2_id) 
@@ -64,11 +80,11 @@ uint32 SpawnGroup::GetNPCType(uint32& rtime, uint32 spawn2_id)
 	int npcType = 0;
 	int totalchance = 0;
 
-	if (group_spawn_limit > 0)
-	{
+	if (group_spawn_limit > 0) {
 		uint16 spawned_count = 0;
-		if (!entity_list.LimitCheckGroup(id, group_spawn_limit, spawned_count))
+		if (!entity_list.LimitCheckGroup(id, group_spawn_limit, spawned_count)) {
 			return(0);
+		}
 
 		uint32 remaining_time_id = 0;
 		uint8 waiting_to_spawn = zone->GetGroupActiveTimers(id, remaining_time_id);
@@ -76,8 +92,7 @@ uint32 SpawnGroup::GetNPCType(uint32& rtime, uint32 spawn2_id)
 		Spawn2 *sp = entity_list.GetSpawnByID(remaining_time_id);
 		uint32 remaining_time = sp ? sp->timer.GetRemainingTime() : 0;
 
-		if (waiting_to_spawn + spawned_count >= group_spawn_limit && remaining_time != 0)
-		{
+		if (waiting_to_spawn + spawned_count >= group_spawn_limit && remaining_time != 0) {
 			// We are at the spawn limit, nothing will spawn this round.
 
 			// We will only reach this point once per round if the spawn limit is 1, because all the spawnpoints will mass reset in Spawn2::Process() immediately following this.
@@ -87,8 +102,7 @@ uint32 SpawnGroup::GetNPCType(uint32& rtime, uint32 spawn2_id)
 			rtime = group_spawn_limit == 1 ? remaining_time_id: 0;
 			return 0;
 		}
-		else
-		{			
+		else {			
 			// We will be spawning something here if the spawn limit is 1. If it is higher than 1, then will force a new spawnpoint to be chosen and then that will immediately spawn.
 
 			// It is possible for a dead mob to have its timer offset from the others in the group. Due to this, once its timer expires it will automatically be picked again 
@@ -113,25 +127,26 @@ uint32 SpawnGroup::GetNPCType(uint32& rtime, uint32 spawn2_id)
 	for (auto& it : list_) {
 		auto se = it.get();
 
-		if(!entity_list.LimitCheckType(se->NPCType, se->npc_spawn_limit))
+		if (!entity_list.LimitCheckType(se->NPCType, se->npc_spawn_limit)) {
 			continue;
+		}
 
-		if(se->mintime != 0 && se->maxtime != 0 && se->mintime <= 24 && se->maxtime <= 24)
-		{
-			if(!zone->zone_time.IsInbetweenTime(se->mintime, se->maxtime))
+		if(se->mintime != 0 && se->maxtime != 0 && se->mintime <= 24 && se->maxtime <= 24) {
+			if (!zone->zone_time.IsInbetweenTime(se->mintime, se->maxtime)) {
 				continue;
+			}
 		}
 
 		totalchance += se->chance;
 		possible.push_back(se);
 	}
 
-	if(totalchance == 0)
+	if (totalchance == 0) {
 		return 0;
-
+	}
 
 	int32 roll = 0;
-	roll = zone->random.Int(0, totalchance-1);
+	roll = zone->random.Int(0, totalchance - 1);
 
 	for (auto se : possible) {
 		if (roll < se->chance) {
@@ -142,12 +157,10 @@ uint32 SpawnGroup::GetNPCType(uint32& rtime, uint32 spawn2_id)
 		}
 	}
 
-	if (group_spawn_limit > 1)
-	{
+	if (group_spawn_limit > 1) {
 		skipped_spawn = 0;
 
-		if (initial_loaded < group_spawn_limit)
-		{
+		if (initial_loaded < group_spawn_limit) {
 			++initial_loaded;
 		}
 	}
@@ -155,7 +168,8 @@ uint32 SpawnGroup::GetNPCType(uint32& rtime, uint32 spawn2_id)
 	return npcType;
 }
 
-void SpawnGroup::AddSpawnEntry(std::unique_ptr<SpawnEntry>& newEntry) {
+void SpawnGroup::AddSpawnEntry(std::unique_ptr<SpawnEntry>& newEntry)
+{
 	list_.push_back(std::move(newEntry));
 }
 
@@ -171,8 +185,10 @@ SpawnGroupList::~SpawnGroupList() {
 
 void SpawnGroupList::AddSpawnGroup(std::unique_ptr<SpawnGroup>& new_group)
 {
-	if(new_group == nullptr)
+	if (new_group == nullptr) {
 		return;
+	}
+
 	m_spawn_groups[new_group->id] = std::move(new_group);
 }
 
@@ -185,15 +201,15 @@ SpawnGroup* SpawnGroupList::GetSpawnGroup(uint32 in_id)
 	return (m_spawn_groups[in_id].get());
 }
 
-bool SpawnGroupList::RemoveSpawnGroup(uint32 in_id) 
+void SpawnGroupList::ReloadSpawnGroups()
 {
-	if (m_spawn_groups.count(in_id) != 1) {
-		return (false);
-	}
+	ClearSpawnGroups();
+	database.LoadSpawnGroups(zone->GetShortName(), &zone->spawn_group_list);
+}
 
-	m_spawn_groups.erase(in_id);
-
-	return (true);
+void SpawnGroupList::ClearSpawnGroups()
+{
+	m_spawn_groups.clear();
 }
 
 bool ZoneDatabase::LoadSpawnGroups(const char* zone_name, SpawnGroupList* spawn_group_list) {
@@ -233,18 +249,18 @@ bool ZoneDatabase::LoadSpawnGroups(const char* zone_name, SpawnGroupList* spawn_
 
     for (auto row = results.begin(); row != results.end(); ++row) {
         auto new_spawn_group = std::make_unique<SpawnGroup>(
-			atoi(row[0]), 
+			Strings::ToInt(row[0]),
 			row[1],
-			atoi(row[2]),
-			atof(row[3]),
-			atof(row[4]),
-			atof(row[5]),
-			atof(row[6]),
-			atof(row[7]),
-			atoi(row[8]),
-			atoi(row[9]),
-			atoi(row[10]),
-			atoi(row[11])
+			Strings::ToInt(row[2]),
+			Strings::ToFloat(row[3]),
+			Strings::ToFloat(row[4]),
+			Strings::ToFloat(row[5]),
+			Strings::ToFloat(row[6]),
+			Strings::ToInt(row[7]),
+			Strings::ToInt(row[8]),
+			Strings::ToInt(row[9]),
+			Strings::ToInt(row[10]),
+			Strings::ToInt(row[11])
 		);
 
         spawn_group_list->AddSpawnGroup(new_spawn_group);
@@ -277,20 +293,19 @@ bool ZoneDatabase::LoadSpawnGroups(const char* zone_name, SpawnGroupList* spawn_
 
     results = QueryDatabase(query);
     if (!results.Success()) {
-        Log(Logs::General, Logs::Error, "Error2 in PopulateZoneLists query '%'", query.c_str());
 		return false;
     }
 
     for (auto row = results.begin(); row != results.end(); ++row) {
         auto newSpawnEntry = std::make_unique<SpawnEntry>( 
-			atoi(row[1]),
-			atoi(row[2]),
-			row[3]?atoi(row[3]):0,
-			atoi(row[4]),
-			atoi(row[5])
+			Strings::ToInt(row[1]),
+			Strings::ToInt(row[2]),
+			(row[3] ? Strings::ToInt(row[3]) : 0),
+			Strings::ToInt(row[4]),
+			Strings::ToInt(row[5])
 		);
 
-		SpawnGroup *spawn_group = spawn_group_list->GetSpawnGroup(atoi(row[0]));
+		SpawnGroup *spawn_group = spawn_group_list->GetSpawnGroup(Strings::ToInt(row[0]));
 
 		if (!spawn_group) {
             continue;
@@ -299,46 +314,119 @@ bool ZoneDatabase::LoadSpawnGroups(const char* zone_name, SpawnGroupList* spawn_
 		spawn_group->AddSpawnEntry(newSpawnEntry);
     }
 
+	LogInfo("Loaded [{}] spawn entries", Strings::Commify(results.RowCount()));
+
 	return true;
 }
 
 bool ZoneDatabase::LoadSpawnGroupsByID(int spawngroupid, SpawnGroupList* spawn_group_list) {
 
 
-	std::string query = StringFormat("SELECT DISTINCT(spawngroup.id), spawngroup.name, spawngroup.spawn_limit, "
-                                    "spawngroup.max_x, spawngroup.min_x, "
-                                    "spawngroup.max_y, spawngroup.min_y, spawngroup.delay, "
-                                    "spawngroup.despawn, spawngroup.despawn_timer, spawngroup.mindelay, spawngroup.wp_spawns "
-                                    "FROM spawngroup WHERE spawngroup.ID = '%i'", spawngroupid);
+	std::string query = fmt::format(
+		SQL(
+			SELECT DISTINCT
+			(spawngroup.id), 
+			spawngroup.name, 
+			spawngroup.spawn_limit,
+			spawngroup.max_x, 
+			spawngroup.min_x,
+            spawngroup.max_y, 
+			spawngroup.min_y, 
+			spawngroup.delay,
+			spawngroup.despawn, 
+			spawngroup.despawn_timer, 
+			spawngroup.mindelay, 
+			spawngroup.wp_spawns
+				FROM 
+					spawngroup 
+				WHERE 
+					spawngroup.ID = '{}'
+			),
+			spawngroupid
+	);
+
     auto results = QueryDatabase(query);
     if (!results.Success()) {
-        Log(Logs::General, Logs::Error, "Error2 in PopulateZoneLists query %s", query.c_str());
 		return false;
     }
 
     for (auto row = results.begin(); row != results.end(); ++row) {
-        auto newSpawnGroup = std::make_unique<SpawnGroup>(atoi(row[0]), row[1], atoi(row[2]), atof(row[3]), atof(row[4]), atof(row[5]), atof(row[6]), atof(row[7]), atoi(row[8]), atoi(row[9]), atoi(row[10]), atoi(row[11]));
+
+		LogSpawnsDetail(
+			"Loading spawn_group spawn_group_id [{}] name [{}] spawn_limit [{}]",
+			row[0],
+			row[1],
+			row[2]
+		);
+
+        auto newSpawnGroup = std::make_unique<SpawnGroup>(
+			Strings::ToInt(row[0]), 
+			row[1], 
+			Strings::ToInt(row[2]), 
+			Strings::ToFloat(row[3]), 
+			Strings::ToFloat(row[4]), 
+			Strings::ToFloat(row[5]), 
+			Strings::ToFloat(row[6]), 
+			Strings::ToInt(row[7]), 
+			Strings::ToInt(row[8]), 
+			Strings::ToInt(row[9]), 
+			Strings::ToInt(row[10]), 
+			Strings::ToInt(row[11])
+		);
+
         spawn_group_list->AddSpawnGroup(newSpawnGroup);
     }
 
-	query = StringFormat("SELECT DISTINCT(spawnentry.spawngroupID), spawnentry.npcid, "
-                        "spawnentry.chance, spawngroup.spawn_limit, spawnentry.mintime, spawnentry.maxtime FROM spawnentry, spawngroup "
-                        "WHERE spawnentry.spawngroupID = '%i' AND spawngroup.spawn_limit = '0' "
-                        "ORDER BY chance", spawngroupid);
+	query = fmt::format(
+		SQL(
+			SELECT DISTINCT
+			(spawnentry.spawngroupID), 
+			spawnentry.npcid,
+			spawnentry.chance, 
+			spawngroup.spawn_limit, 
+			spawnentry.mintime, 
+			spawnentry.maxtime 
+				FROM 
+					spawnentry, 
+					spawngroup
+				WHERE 
+					spawnentry.spawngroupID = '{}' 
+					AND 
+					spawngroup.spawn_limit = '0'
+					ORDER BY chance), 
+					spawngroupid
+	);
+
     results = QueryDatabase(query);
 	if (!results.Success()) {
-        Log(Logs::General, Logs::Error, "Error3 in PopulateZoneLists query '%s'", query.c_str());
 		return false;
 	}
 
     for(auto row = results.begin(); row != results.end(); ++row) {
-        auto newSpawnEntry = std::make_unique<SpawnEntry>( atoi(row[1]), atoi(row[2]), row[3]?atoi(row[3]):0, atoi(row[4]), atoi(row[5]));
-        SpawnGroup *sg = spawn_group_list->GetSpawnGroup(atoi(row[0]));
-        if (!sg) {
+        auto newSpawnEntry = std::make_unique<SpawnEntry>(
+			Strings::ToInt(row[1]), 
+			Strings::ToInt(row[2]), 
+			(row[3] ? Strings::ToInt(row[3]) : 0), 
+			Strings::ToInt(row[4]), 
+			Strings::ToInt(row[5])
+		);
+
+		LogSpawnsDetail(
+			"Loading spawn_entry spawn_group_id [{}] npc_id [{}] chance [{}] spawn_limit [{}] min_time [{}] max_time [{}] ",
+			row[0],
+			row[1],
+			row[2],
+			row[3],
+			row[4],
+			row[5]
+		);
+
+        SpawnGroup *spawn_group = spawn_group_list->GetSpawnGroup(atoi(row[0]));
+        if (!spawn_group) {
             continue;
         }
 
-        sg->AddSpawnEntry(newSpawnEntry);
+		spawn_group->AddSpawnEntry(newSpawnEntry);
     }
 
 	return true;

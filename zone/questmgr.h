@@ -109,7 +109,7 @@ public:
 	std::string getskillname(int skill_id);
 	std::string getfactionname(int faction_id);
 	std::string getlanguagename(int language_id);
-	std::string getbodytypename(uint32 bodytype_id);
+	std::string getbodytypename(uint8 body_type_id);
 	std::string getconsiderlevelname(uint8 consider_level);
 	void safemove();
 	void rain(int weather);
@@ -196,13 +196,17 @@ public:
    	void removetitle(int titlecheck);
 	uint16 CreateGroundObject(uint32 itemid, const glm::vec4& position, uint32 decay_time = 300000);
 	uint16 CreateGroundObjectFromModel(const char* model, const glm::vec4& position, uint8 type = 0x00, uint32 decay_time = 0);
-	void ModifyNPCStat(const char *identifier, const char *newValue);
+	void ModifyNPCStat(std::string stat, std::string value);
 	void UpdateSpawnTimer(uint32 id, uint32 newTime);
 	void MerchantSetItem(uint32 NPCid, uint32 itemid, uint32 quantity = 0);
 	uint32 MerchantCountItem(uint32 NPCid, uint32 itemid);
 	const char* varlink(char* perltext, int item_id);
 	std::string saylink(char* saylink_text, bool silent, const char* link_name);
+	std::string getcharnamebyid(uint32 char_id);
 	const char* getguildnamebyid(int guild_id);
+	std::string getnpcnamebyid(uint32 npc_id);
+	int getguildidbycharid(uint32 char_id);
+	int getgroupidbycharid(uint32 char_id);
 	void SetRunning(bool val);
 	bool IsRunning();
 	void FlyMode(GravityBehavior flymode);

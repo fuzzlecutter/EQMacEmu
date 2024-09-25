@@ -1344,7 +1344,7 @@ uint16 EntityList::GetFreeID()
 // if no language skill is specified, sent with 100 skill
 void EntityList::ChannelMessage(Mob *from, uint8 chan_num, uint8 language, const char *message, ...)
 {
-	ChannelMessage(from, chan_num, language, 100, message);
+	ChannelMessage(from, chan_num, language, Language::MaxValue, message);
 }
 
 void EntityList::ChannelMessage(Mob *from, uint8 chan_num, uint8 language,
@@ -2680,7 +2680,7 @@ void EntityList::SendIllusionedPlayers(Client *client)
 	auto it = client_list.begin();
 	while (it != client_list.end()) {
 		illusion = it->second;
-		if (!illusion->GMHideMe(client) && (illusion->GetRace() == MINOR_ILLUSION || illusion->GetRace() == TREEFORM))
+		if (!illusion->GMHideMe(client) && (illusion->GetRace() == Race::MinorIllusion || illusion->GetRace() == Race::Tree))
 		{
 			illusion->SendIllusionPacket(
 				illusion->GetRace(),
@@ -2999,6 +2999,20 @@ void EntityList::ListPlayerCorpses(Client *client)
 	}
 }
 
+void EntityList::DespawnGridNodes(int32 grid_id) {
+	for (auto m : mob_list) {
+		Mob* mob = m.second;
+		if (
+			mob->IsNPC() &&
+			mob->GetRace() == Race::Tribunal &&
+			mob->EntityVariableExists("grid_id") &&
+			Strings::ToInt(mob->GetEntityVariable("grid_id")) == grid_id)
+		{
+			mob->Depop();
+		}
+	}
+}
+
 // returns the number of corpses deleted. A negative number indicates an error code.
 uint32 EntityList::DeleteNPCCorpses()
 {
@@ -3189,7 +3203,7 @@ void EntityList::ClearFeignAggro(Mob *targ)
 	auto it = npc_list.begin();
 	while (it != npc_list.end()) {
 		if (it->second->CheckAggro(targ)) {
-			if (it->second->GetSpecialAbility(IMMUNE_FEIGN_DEATH)) {
+			if (it->second->GetSpecialAbility(SpecialAbility::FeignDeathImmunity)) {
 				++it;
 				continue;
 			}
@@ -3222,7 +3236,7 @@ void EntityList::ClearFeignAggro(Mob *targ)
 				if (it->second->GetLevel() < 35 || zone->random.Roll(35))
 				{
 					it->second->RemoveFromHateList(targ);
-					if (it->second->GetSpecialAbility(SPECATK_RAMPAGE))
+					if (it->second->GetSpecialAbility(SpecialAbility::Rampage))
 						it->second->RemoveFromRampageList(targ, true);
 				}
 				else 
@@ -3308,7 +3322,7 @@ void EntityList::AddHealAggro(Mob *target, Mob *caster, uint16 hate)
 		cur = it->second;
 
 		if (cur->IsPet() || !cur->CheckAggro(target) || cur->IsFeared() 
-			|| (target->IsClient() && target->CastToClient()->IsFeigned() && !cur->GetSpecialAbility(IMMUNE_FEIGN_DEATH))
+			|| (target->IsClient() && target->CastToClient()->IsFeigned() && !cur->GetSpecialAbility(SpecialAbility::FeignDeathImmunity))
 		)
 		{
 			++it;
@@ -3706,7 +3720,7 @@ void EntityList::LimitAddNPC(NPC *npc)
 	SpawnLimitRecord r;
 
 	uint16 eid = npc->GetID();
-	r.spawngroup_id = npc->GetSp2();
+	r.spawngroup_id = npc->GetSpawnGroupId();
 	r.npc_type = npc->GetNPCTypeID();
 
 	npc_limit_list[eid] = r;
@@ -3848,7 +3862,7 @@ bool EntityList::GetZommPet(Mob *owner, NPC* &pet)
 	while (it != npc_list.end()) {
 		NPC* n = it->second;
 		if (n->GetSwarmInfo()) {
-			if (n->GetSwarmInfo()->owner_id == owner->GetID() && n->GetRace() == EYE_OF_ZOMM) {
+			if (n->GetSwarmInfo()->owner_id == owner->GetID() && n->GetRace() == Race::EyeOfZomm) {
 				pet = it->second;
 				return true;
 			}
@@ -4129,7 +4143,7 @@ uint16 EntityList::CreateDoor(const char *model, const glm::vec4& position, uint
 
 	auto door = new Doors(model, position, opentype, size);
 	RemoveAllDoors();
-	zone->LoadZoneDoors(zone->GetShortName());
+	zone->LoadZoneDoors();
 	entity_list.AddDoor(door);
 	entity_list.RespawnAllDoors();
 
@@ -4645,7 +4659,7 @@ NPC *EntityList::GetClosestBanker(Mob *sender, uint32 &distance)
 
 	auto it = npc_list.begin();
 	while (it != npc_list.end()) {
-		if (it->second->GetClass() == BANKER) {
+		if (it->second->GetClass() == Class::Banker) {
 			uint32 nd = ((it->second->GetY() - sender->GetY()) * (it->second->GetY() - sender->GetY())) +
 				((it->second->GetX() - sender->GetX()) * (it->second->GetX() - sender->GetX()));
 			if (nd < distance){
@@ -4658,7 +4672,7 @@ NPC *EntityList::GetClosestBanker(Mob *sender, uint32 &distance)
 	return nc;
 }
 
-Mob *EntityList::GetClosestMobByBodyType(Mob *sender, bodyType BodyType)
+Mob *EntityList::GetClosestMobByBodyType(Mob *sender, uint8 BodyType)
 {
 
 	if (!sender)
@@ -5271,4 +5285,14 @@ uint16 EntityList::GetTopHateCount(Mob* targ)
 		++it;
 	}
 	return num;
+}
+
+void EntityList::ReloadMerchants() {
+	for (auto it = npc_list.begin(); it != npc_list.end(); ++it) {
+		NPC* cur = it->second;
+		if (cur->MerchantType != 0) {
+			zone->ClearMerchantLists();
+			zone->LoadNewMerchantData(cur->MerchantType);
+		}
+	}
 }

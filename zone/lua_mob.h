@@ -248,9 +248,12 @@ public:
 	int GetAA(int id);
 	bool DivineAura();
 	void SetOOCRegen(int regen);
-	const char* GetEntityVariable(const char *name);
-	void SetEntityVariable(const char *name, const char *value);
-	bool EntityVariableExists(const char *name);
+	bool ClearEntityVariables();
+	bool DeleteEntityVariable(std::string variable_name);
+	std::string GetEntityVariable(std::string variable_name);
+	luabind::object GetEntityVariables(lua_State* L);
+	void SetEntityVariable(std::string variable_name, std::string variable_value);
+	bool EntityVariableExists(std::string variable_name);
 	void Signal(uint32 id);
 	bool CombatRange(Lua_Mob other);
 	void DoSpecialAttackDamage(Lua_Mob other, int skill, int max_damage);
@@ -282,7 +285,7 @@ public:
 	void DoKnockback(Lua_Mob caster, uint32 pushback, uint32 pushup);
 	bool IsRunning();
 	void SetRunning(bool running);
-	void SetBodyType(int new_body, bool overwrite_orig);
+	void SetBodyType(uint8 new_body, bool overwrite_orig);
 	void SetAllowBeneficial(bool value);
 	bool GetAllowBeneficial();
 	bool IsBeneficialAllowed(Lua_Mob target);

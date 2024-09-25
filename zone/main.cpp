@@ -44,6 +44,7 @@
 #include "../common/spdat.h"
 #include "../common/eqemu_logsys.h"
 #include "../common/event/timer.h"
+#include "../common/zone_store.h"
 #include "../common/content/world_content_service.h"
 #include "../common/repositories/content_flags_repository.h"
 
@@ -93,6 +94,7 @@ extern volatile bool is_zone_loaded;
 
 EntityList  entity_list;
 WorldServer worldserver;
+ZoneStore zone_store;
 uint32      numclients = 0;
 char        errorname[32];
 extern Zone *zone;
@@ -261,7 +263,7 @@ int main(int argc, char** argv) {
 	}
 
 	LogInfo("Loading zone names");
-	database.LoadZoneNames();
+	zone_store.LoadZones(database);
 
 	LogInfo("Loading items");
 	if(!database.LoadItems(hotfix_name)) {
@@ -361,9 +363,9 @@ int main(int argc, char** argv) {
 #endif
 	if (!strlen(zone_name) || !strcmp(zone_name,".")) {
 		LogInfo("Entering sleep mode");
-	} else if (!Zone::Bootup(database.GetZoneID(zone_name), true)) {
+	} else if (!Zone::Bootup(ZoneID(zone_name), true)) {
 		LogError("Zone Bootup failed :: Zone::Bootup");
-		zone = 0;
+		zone = nullptr;
 	}
 
 	//register all the patches we have avaliable with the stream identifier.
@@ -470,6 +472,13 @@ int main(int argc, char** argv) {
 				event_scheduler.Process(zone, &content_service);
 
 				if (zone) {
+					// this was put in to appease concerns about the RNG being affected by the time of day or day of week the server was started on, resulting in bad loot
+					// The idea is that as the zone processing runs, it takes variable amounts of time based on external factors like player behavior and causes this discard
+					// code to execute less or more often based on those factors.
+					// By discarding some numbers from the RNG sequence, we hope to add some amount of unpredictability and offset the 'bad loot seed' from startup.
+					if (Timer::GetCurrentTime() % 3 == 0) {
+						zone->random.Discard(Timer::GetCurrentTime() % 5 + 1); // arbitrary value but discarding more causes more slowdowns as it 'refills'
+					}
 					if (!zone->Process()) {
 						Zone::Shutdown();
 					}

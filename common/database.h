@@ -106,9 +106,8 @@ public:
 	/* Character Creation */
 	bool	SaveCharacterCreate(uint32 character_id, uint32 account_id, PlayerProfile_Struct* pp);
 
-	bool	MoveCharacterToZone(const char* charname, const char* zonename);
-	bool	MoveCharacterToZone(const char* charname, const char* zonename,uint32 zoneid);
-	bool	MoveCharacterToZone(uint32 iCharID, const char* iZonename);
+	bool	MoveCharacterToZone(const char* charname, uint32 zone_id);
+	bool	MoveCharacterToZone(uint32 character_id, uint32 zone_id);
 	uint16	MoveCharacterToBind(uint32 iCharID);
 	bool	UpdateName(const char* oldname, const char* newname);
 	bool	SetHackerFlag(const char* accountname, const char* charactername, const char* hacked);
@@ -124,25 +123,31 @@ public:
 
 	/* General Information Queries */
 
+	bool	AddBannedIP(std::string banned_ip, std::string notes); //Add IP address to the banned_ips table.
+	bool	AddGMIP(char* ip_address, char* name);
+	bool	CheckBannedIPs(std::string login_ip); //Check incoming connection against banned IP table.
+	bool	CheckGMIPs(std::string login_ip, uint32 account_id);
 	bool	CheckNameFilter(const char* name, bool surname = false);
 	bool	CheckUsedName(const char* name, uint32 charid = 0);
+	bool	NoRentExpired(const char* name);
+
 	uint32	GetAccountIDByChar(const char* charname, uint32* oCharID = 0);
 	uint32	GetAccountIDByChar(uint32 char_id);
 	uint32	GetAccountIDByName(std::string account_name, int16* status = 0, uint32* lsid = 0);
+	uint32	GetCharacterID(const char* name);
+	uint32	GetCharacterInfo(const char* iName, uint32* oAccID = 0, uint32* oZoneID = 0, float* oX = 0, float* oY = 0, float* oZ = 0);
+	uint32	GetGuildIDByCharID(uint32 char_id);
+	uint32  GetGroupIDByCharID(uint32 char_id);
+	uint32	GetLevelByChar(const char* charname);
+
 	void	GetAccountName(uint32 accountid, char* name, uint32* oLSAccountID = 0);
 	void	GetCharName(uint32 char_id, char* name);
-	uint32	GetCharacterInfo(const char* iName, uint32* oAccID = 0, uint32* oZoneID = 0, float* oX = 0, float* oY = 0, float* oZ = 0);
-	uint32	GetCharacterID(const char *name);
-	bool	AddBannedIP(std::string banned_ip, std::string notes); //Add IP address to the banned_ips table.
-	bool	CheckBannedIPs(std::string login_ip); //Check incoming connection against banned IP table.
-	bool	CheckGMIPs(std::string login_ip, uint32 account_id);
-	bool	AddGMIP(char* ip_address, char* name);
+	std::string GetCharNameByID(uint32 char_id);
+	std::string GetNPCNameByID(uint32 npc_id);
 	void	LoginIP(uint32 account_id, std::string loginIP);
 	void	ClearAllActive();
 	void	ClearAccountActive(uint32 AccountID);
 	void	SetAccountActive(uint32 AccountID);
-	uint32	GetLevelByChar(const char* charname);
-	bool	NoRentExpired(const char* name);
 
 	/*
 	* Account Related
@@ -202,18 +207,14 @@ public:
 	/*
 	* General Queries
 	*/
-	bool	LoadZoneNames();
 	bool	GetZoneLongName(const char* short_name, char** long_name, char* file_name = 0, float* safe_x = 0, float* safe_y = 0, float* safe_z = 0, uint32* graveyard_id = 0, uint16* graveyard_time = 0, uint32* maxclients = 0);
 	bool	GetZoneGraveyard(const uint32 graveyard_id, uint32* graveyard_zoneid = 0, float* graveyard_x = 0, float* graveyard_y = 0, float* graveyard_z = 0, float* graveyard_heading = 0);
 	uint32	GetZoneGraveyardID(uint32 zone_id);
 	uint16	GetGraveyardTime(uint16 zone_id);
-	uint32	GetZoneID(const char* zonename);
 	uint8	GetPEQZone(uint32 zoneID);
 	uint8	GetMinStatus(uint32 zone_id);
-	const char*	GetZoneName(uint32 zoneID, bool ErrorUnknown = false);
 	uint8	GetServerType();
 	bool	GetSafePoints(const char* short_name, float* safe_x = 0, float* safe_y = 0, float* safe_z = 0, float* safe_heading = 0, int16* minstatus = 0, uint8* minlevel = 0, char *flag_needed = nullptr, uint8* expansion = 0);
-	bool	GetSafePoints(uint32 zoneID, float* safe_x = 0, float* safe_y = 0, float* safe_z = 0, float* safe_heading = 0, int16* minstatus = 0, uint8* minlevel = 0, char *flag_needed = nullptr) { return GetSafePoints(GetZoneName(zoneID), safe_x, safe_y, safe_z, safe_heading, minstatus, minlevel, flag_needed); }
 	uint8	GetSkillCap(uint8 skillid, uint8 in_race, uint8 in_class, uint16 in_level);
 	uint8	GetRaceSkill(uint8 skillid, uint8 in_race);
 	void	ClearMerchantTemp();
@@ -227,7 +228,6 @@ public:
 	void	PurgeAllDeletedDataBuckets();
 
 private:
-	std::map<uint32,std::string>	zonename_array;
 
 	Mutex Mvarcache;
 	VarCache_Struct varcache;

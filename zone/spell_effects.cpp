@@ -273,7 +273,7 @@ bool Mob::SpellEffect(Mob* caster, uint16 spell_id, int buffslot, int caster_lev
 			case SE_CurrentMana:
 			{
 				// Bards don't get mana from effects, good or bad.
-				if(GetClass() == BARD)
+				if(GetClass() == Class::Bard)
 					break;
 
 				// from client decompile, these effects are less effective on NPCs above level 52
@@ -391,7 +391,7 @@ bool Mob::SpellEffect(Mob* caster, uint16 spell_id, int buffslot, int caster_lev
 #endif
 						if (IsClient())
 						{
-							uint32 zoneid = database.GetZoneID(target_zone);
+							uint32 zoneid = ZoneID(target_zone);
 							zone->ApplyRandomLoc(zoneid, x, y);
 							if (zoneid == zone->GetZoneID()) {
 								CastToClient()->MovePC(zoneid, x, y, z, heading);
@@ -460,7 +460,7 @@ bool Mob::SpellEffect(Mob* caster, uint16 spell_id, int buffslot, int caster_lev
 						CastToClient()->MovePC(zone->GetZoneID(), x, y, z, heading);
 					else
 					{
-						uint32 zoneid = database.GetZoneID(target_zone);
+						uint32 zoneid = ZoneID(target_zone);
 
 						// This will only prevent the server side zone. Our client will often initiate the zoning process
 						// as an unsoliciated request after the spell is cast. The server will then cancel that using SendZoneCancel().
@@ -558,7 +558,7 @@ bool Mob::SpellEffect(Mob* caster, uint16 spell_id, int buffslot, int caster_lev
 					max_level = 999;
 
 				// Ignore if spell is beneficial (ex. Harvest)
-				if (IsDetrimentalSpell(spell.id) && (GetSpecialAbility(UNSTUNABLE) || GetLevel() > max_level))
+				if (IsDetrimentalSpell(spell.id) && (GetSpecialAbility(SpecialAbility::StunImmunity) || GetLevel() > max_level))
 				{
 					caster->Message_StringID(Chat::SpellFailure, IMMUNE_STUN);
 				}
@@ -883,7 +883,7 @@ bool Mob::SpellEffect(Mob* caster, uint16 spell_id, int buffslot, int caster_lev
 #ifdef SPELL_EFFECT_SPAM
 				snprintf(effect_desc, _EDLEN, "Cancel Magic: %d", effect_value);
 #endif
-				if(GetSpecialAbility(UNDISPELLABLE)){
+				if(GetSpecialAbility(SpecialAbility::DispellImmunity)){
 					caster->Message_StringID(Chat::SpellFailure, SPELL_NO_EFFECT, spells[spell_id].name);
 					break;
 				}
@@ -917,7 +917,7 @@ bool Mob::SpellEffect(Mob* caster, uint16 spell_id, int buffslot, int caster_lev
 #ifdef SPELL_EFFECT_SPAM
 				snprintf(effect_desc, _EDLEN, "Dispel Detrimental: %d", effect_value);
 #endif
-				if(GetSpecialAbility(UNDISPELLABLE)){
+				if(GetSpecialAbility(SpecialAbility::DispellImmunity)){
 					caster->Message_StringID(Chat::SpellFailure, SPELL_NO_EFFECT, spells[spell_id].name);
 					break;
 				}
@@ -942,7 +942,7 @@ bool Mob::SpellEffect(Mob* caster, uint16 spell_id, int buffslot, int caster_lev
 #ifdef SPELL_EFFECT_SPAM
 				snprintf(effect_desc, _EDLEN, "Dispel Beneficial: %d", effect_value);
 #endif
-				if(GetSpecialAbility(UNDISPELLABLE)){
+				if(GetSpecialAbility(SpecialAbility::DispellImmunity)){
 					caster->Message_StringID(Chat::SpellFailure, SPELL_NO_EFFECT, spells[spell_id].name);
 					break;
 				}
@@ -1324,7 +1324,7 @@ bool Mob::SpellEffect(Mob* caster, uint16 spell_id, int buffslot, int caster_lev
 					max_level = RuleI(Spells, BaseImmunityLevel); // Default max is 55 level limit
 
 				// NPCs ignore level limits in their spells
-				if(GetSpecialAbility(UNSTUNABLE) ||
+				if(GetSpecialAbility(SpecialAbility::StunImmunity) ||
 					(GetLevel() > max_level && caster && caster->IsClient() && IsNPC()))
 				{
 					caster->Message_StringID(Chat::SpellFailure, IMMUNE_STUN);
@@ -1801,10 +1801,10 @@ bool Mob::SpellEffect(Mob* caster, uint16 spell_id, int buffslot, int caster_lev
 #ifdef SPELL_EFFECT_SPAM
 				snprintf(effect_desc, _EDLEN, "Sacrifice");
 #endif
-				if(!IsClient() || !caster->IsClient()){
+				if(!IsClient()){
 					break;
 				}
-				CastToClient()->SacrificeConfirm(caster->CastToClient());
+				CastToClient()->SacrificeConfirm(caster);
 				break;
 			}
 
@@ -2275,7 +2275,7 @@ int Mob::CalcSpellEffectValue(uint16 spell_id, int effect_index, int caster_leve
 
 	if (RuleB(Spells, JamFestAAOnlyAffectsBard))
 	{
-		if (GetClass() == BARD && IsBardSong(spell_id))
+		if (GetClass() == Class::Bard && IsBardSong(spell_id))
 		{
 			// this bonus (effective_casting_level) is only used in the Jam Fest AA
 			caster_level += itembonuses.effective_casting_level + spellbonuses.effective_casting_level + aabonuses.effective_casting_level;
@@ -4586,7 +4586,7 @@ bool Mob::PassLimitClass(uint32 Classes_, uint16 Class_)
 
 	Class_ += 1;
 
-	for (int CurrentClass = 1; CurrentClass <= PLAYER_CLASS_COUNT; ++CurrentClass){
+	for (int CurrentClass = 1; CurrentClass <= Class::PLAYER_CLASS_COUNT; ++CurrentClass){
 		if (Classes_ % 2 == 1){
 			if (CurrentClass == Class_)
 				return true;
@@ -4697,57 +4697,57 @@ bool Mob::PassCastRestriction(bool UseCastRestriction,  int16 value, bool IsDama
 		switch(value)
 		{
 			case 100:	
-				if ((GetBodyType() == BT_Animal) || (GetBodyType() == BT_Humanoid))
+				if ((GetBodyType() == BodyType::Animal) || (GetBodyType() == BodyType::Humanoid))
 					return true;
 				break;
 
 			case 101:	
-				if (GetBodyType() == BT_Dragon || GetBodyType() == BT_VeliousDragon || GetBodyType() == BT_Dragon3)
+				if (GetBodyType() == BodyType::Dragon || GetBodyType() == BodyType::VeliousDragon || GetBodyType() == BodyType::Dragon3)
 					return true;
 				break;
 
 			case 102:	
-				if ((GetBodyType() == BT_Animal) || (GetBodyType() == BT_Insect))
+				if ((GetBodyType() == BodyType::Animal) || (GetBodyType() == BodyType::Insect))
 					return true;
 				break;
 
 			case 104:	
-				if (GetBodyType() == BT_Animal)
+				if (GetBodyType() == BodyType::Animal)
 					return true;
 				break;
 
 			case 105:	
-				if (GetBodyType() == BT_Plant)
+				if (GetBodyType() == BodyType::Plant)
 					return true;
 				break;
 
 			case 106:	
-				if (GetBodyType() == BT_Giant)
+				if (GetBodyType() == BodyType::Giant)
 					return true;
 				break;
 
 			case 108:	
-				if ((GetBodyType() != BT_Animal) || (GetBodyType() != BT_Humanoid))
+				if ((GetBodyType() != BodyType::Animal) || (GetBodyType() != BodyType::Humanoid))
 					return true;
 				break;
 
 			case 109:	
-				if (GetRace() == BIXIE)
+				if (GetRace() == Race::Bixie)
 					return true;
 				break;
 
 			case 111:	
-				if (GetRace() == HALFLING)
+				if (GetRace() == Race::Halfling)
 					return true;
 				break;
 
 			case 112:	
-				if (GetRace() == FUNGUSMAN)
+				if (GetRace() == Race::Fungusman)
 					return true;
 				break;
 
 			case 113:	
-				if (GetRace() == KOBOLD)
+				if (GetRace() == Race::Kobold)
 					return true;
 				break;
 
@@ -4755,27 +4755,27 @@ bool Mob::PassCastRestriction(bool UseCastRestriction,  int16 value, bool IsDama
 				break;
 
 			case 117:	
-				if ((GetBodyType() == BT_Animal) || (GetBodyType() == BT_Plant))
+				if ((GetBodyType() == BodyType::Animal) || (GetBodyType() == BodyType::Plant))
 					return true;
 				break;
 
 			case 118:	
-				if (GetBodyType() == BT_Summoned)
+				if (GetBodyType() == BodyType::Summoned)
 					return true;
 				break;
 
 			case 119:	
-				if (IsPet() && ((GetRace() == FIRE_ELEMENTAL) || ((GetRace() == ELEMENTAL) && GetTexture() == 1)))
+				if (IsPet() && ((GetRace() == Race::FireElemental) || ((GetRace() == Race::Elemental) && GetTexture() == 1)))
 					return true;
 				break;
 
 			case 120:	
-				if (GetBodyType() == BT_Undead)
+				if (GetBodyType() == BodyType::Undead)
 					return true;
 				break;
 
 			case 121:	
-				if (GetBodyType() != BT_Undead)
+				if (GetBodyType() != BodyType::Undead)
 					return true;
 				break;
 
@@ -4783,22 +4783,22 @@ bool Mob::PassCastRestriction(bool UseCastRestriction,  int16 value, bool IsDama
 				break;
 
 			case 123:	
-				if (GetBodyType() == BT_Humanoid)
+				if (GetBodyType() == BodyType::Humanoid)
 					return true;
 				break;
 
 			case 124:	
-				if ((GetBodyType() == BT_Undead) && (GetHPRatio() < 10.0f))
+				if ((GetBodyType() == BodyType::Undead) && (GetHPRatio() < 10.0f))
 					return true;
 				break;
 
 			case 125:	
-				if ((GetRace() == CLOCKWORK_GNOME) && (GetHPRatio() < 10.0f))
+				if ((GetRace() == Race::ClockworkGnome) && (GetHPRatio() < 10.0f))
 					return true;
 				break;
 
 			case 126:	
-				if ((GetRace() == WISP) && (GetHPRatio() < 10.0f))
+				if ((GetRace() == Race::Wisp) && (GetHPRatio() < 10.0f))
 					return true;
 				break;
 
@@ -4824,8 +4824,8 @@ bool Mob::PassCastRestriction(bool UseCastRestriction,  int16 value, bool IsDama
 
 			case 304:	
 				if (IsClient() && 
-					((GetClass() == WARRIOR) || (GetClass() == BARD) || (GetClass() == SHADOWKNIGHT) || (GetClass() == PALADIN) || (GetClass() == CLERIC)
-					 || (GetClass() == RANGER) || (GetClass() == SHAMAN) || (GetClass() == ROGUE)))
+					((GetClass() == Class::Warrior) || (GetClass() == Class::Bard) || (GetClass() == Class::ShadowKnight) || (GetClass() == Class::Paladin) || (GetClass() == Class::Cleric)
+					 || (GetClass() == Class::Ranger) || (GetClass() == Class::Shaman) || (GetClass() == Class::Rogue)))
 					return true;
 				break;
 
@@ -4835,27 +4835,27 @@ bool Mob::PassCastRestriction(bool UseCastRestriction,  int16 value, bool IsDama
 				break;
 
 			case 818:	
-				if (GetBodyType() == BT_Undead)
+				if (GetBodyType() == BodyType::Undead)
 					return true;
 				break;
 
 			case 819:	
-				if (GetBodyType() != BT_Undead)
+				if (GetBodyType() != BodyType::Undead)
 					return true;
 				break;
 
 			case 842:	
-				if (GetBodyType() == BT_Humanoid && GetLevel() <= 84)
+				if (GetBodyType() == BodyType::Humanoid && GetLevel() <= 84)
 					return true;
 				break;
 
 			case 843:	
-				if (GetBodyType() == BT_Humanoid && GetLevel() <= 86)
+				if (GetBodyType() == BodyType::Humanoid && GetLevel() <= 86)
 					return true;
 				break;
 
 			case 844:	
-				if (GetBodyType() == BT_Humanoid && GetLevel() <= 88)
+				if (GetBodyType() == BodyType::Humanoid && GetLevel() <= 88)
 					return true;
 				break;
 		}

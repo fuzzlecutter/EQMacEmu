@@ -104,6 +104,10 @@ namespace EQ
 
 	} // namespace invslot
 
+	namespace DevTools {
+		const int32 GM_ACCOUNT_STATUS_LEVEL = 150;
+	}
+
 	namespace invbag {
 		using Mac::invbag::SLOT_INVALID;
 		using Mac::invbag::SLOT_BEGIN;
@@ -182,14 +186,11 @@ namespace EQ
 			Proximity
 		};
 
-		extern const std::map<int, std::string>& GetLanguageMap();
-		std::string GetLanguageName(int language_id);
+		extern const std::map<uint8, std::string>& GetLanguageMap();
+		std::string GetLanguageName(uint8 language_id);
 
 		extern const std::map<int8, std::string>& GetFlyModeMap();
 		std::string GetFlyModeName(int8 flymode_id);
-
-		extern const std::map<bodyType, std::string>& GetBodyTypeMap();
-		std::string GetBodyTypeName(bodyType bodytype_id);
 
 		extern const std::map<uint8, std::string>& GetAccountStatusMap();
 		std::string GetAccountStatusName(uint8 account_status);
@@ -330,5 +331,128 @@ enum TargetDescriptionType : uint8 {
 	UCYour
 };
 
+enum ReloadWorld : uint8 {
+	NoRepop = 0,
+	Repop,
+	ForceRepop
+};
+
+namespace SpecialAbility {
+	constexpr int Summon = 1;
+	constexpr int Enrage = 2;
+	constexpr int Rampage = 3;
+	constexpr int AreaRampage = 4;
+	constexpr int Flurry = 5;
+	constexpr int TripleAttack = 6;
+	constexpr int DualWield = 7;
+	constexpr int DisallowEquip = 8;
+	constexpr int BaneAttack = 9;
+	constexpr int MagicalAttack = 10;
+	constexpr int RangedAttack = 11;
+	constexpr int SlowImmunity = 12;
+	constexpr int MesmerizeImmunity = 13;
+	constexpr int CharmImmunity = 14;
+	constexpr int StunImmunity = 15;
+	constexpr int SnareImmunity = 16;
+	constexpr int FearImmunity = 17;
+	constexpr int DispellImmunity = 18;
+	constexpr int MeleeImmunity = 19;
+	constexpr int MagicImmunity = 20;
+	constexpr int FleeingImmunity = 21;
+	constexpr int MeleeImmunityExceptBane = 22;
+	constexpr int MeleeImmunityExceptMagical = 23;
+	constexpr int AggroImmunity = 24;
+	constexpr int BeingAggroImmunity = 25;
+	constexpr int CastingFromRangeImmunity = 26;
+	constexpr int FeignDeathImmunity = 27;
+	constexpr int TauntImmunity = 28;
+	constexpr int TunnelVision = 29;
+	constexpr int NoBuffHealFriends = 30;
+	constexpr int PacifyImmunity = 31;
+	constexpr int Leash = 32;
+	constexpr int Tether = 33;
+	constexpr int PermarootFlee = 34;
+	constexpr int HarmFromClientImmunity = 35;
+	constexpr int AlwaysFlee = 36;
+	constexpr int FleePercent = 37;
+	constexpr int AllowBeneficial = 38;
+	constexpr int DisableMelee = 39;
+	constexpr int NPCChaseDistance = 40;
+	constexpr int AllowedToTank = 41;
+	constexpr int ProximityAggro = 42;
+	constexpr int AlwaysCallHelp = 43;
+	constexpr int UseWarriorSkills = 44;
+	constexpr int AlwaysFleeLowCon = 45;
+	constexpr int NoLoitering = 46;
+	constexpr int BadFactionBlockHandin = 47;
+	constexpr int PCDeathblowCorpse = 48;
+	constexpr int CorpseCamper = 49;
+	constexpr int ReverseSlow = 50;
+	constexpr int HasteImmunity = 51;
+	constexpr int DisarmImmunity = 52;
+	constexpr int RiposteImmunity = 53;
+	constexpr int Max = 54;
+
+	constexpr int MaxParameters = 8;
+
+	std::string GetName(int ability_id);
+	bool IsValid(int ability_id);
+}
+
+static std::map<int, std::string> special_ability_names = {
+	{ SpecialAbility::Summon,                     "Summon" },
+	{ SpecialAbility::Enrage,                     "Enrage" },
+	{ SpecialAbility::Rampage,                    "Rampage" },
+	{ SpecialAbility::AreaRampage,                "Area Rampage" },
+	{ SpecialAbility::Flurry,                     "Flurry" },
+	{ SpecialAbility::TripleAttack,               "Triple Attack" },
+	{ SpecialAbility::DualWield,                  "Dual Wield" },
+	{ SpecialAbility::DisallowEquip,              "Disallow Equip" },
+	{ SpecialAbility::BaneAttack,                 "Bane Attack" },
+	{ SpecialAbility::MagicalAttack,              "Magical Attack" },
+	{ SpecialAbility::RangedAttack,               "Ranged Attack" },
+	{ SpecialAbility::SlowImmunity,               "Immune to Slow" },
+	{ SpecialAbility::MesmerizeImmunity,          "Immune to Mesmerize" },
+	{ SpecialAbility::CharmImmunity,              "Immune to Charm" },
+	{ SpecialAbility::StunImmunity,               "Immune to Stun" },
+	{ SpecialAbility::SnareImmunity,              "Immune to Snare" },
+	{ SpecialAbility::FearImmunity,               "Immune to Fear" },
+	{ SpecialAbility::DispellImmunity,            "Immune to Dispell" },
+	{ SpecialAbility::MeleeImmunity,              "Immune to Melee" },
+	{ SpecialAbility::MagicImmunity,              "Immune to Magic" },
+	{ SpecialAbility::FleeingImmunity,            "Immune to Fleeing" },
+	{ SpecialAbility::MeleeImmunityExceptBane,    "Immune to Melee except Bane" },
+	{ SpecialAbility::MeleeImmunityExceptMagical, "Immune to Non-Magical Melee" },
+	{ SpecialAbility::AggroImmunity,              "Immune to Aggro" },
+	{ SpecialAbility::BeingAggroImmunity,         "Immune to Being Aggro" },
+	{ SpecialAbility::CastingFromRangeImmunity,   "Immune to Ranged Spells" },
+	{ SpecialAbility::FeignDeathImmunity,         "Immune to Feign Death" },
+	{ SpecialAbility::TauntImmunity,              "Immune to Taunt" },
+	{ SpecialAbility::TunnelVision,               "Tunnel Vision" },
+	{ SpecialAbility::NoBuffHealFriends,          "Does Not Heal or Buff Allies" },
+	{ SpecialAbility::PacifyImmunity,             "Immune to Pacify" },
+	{ SpecialAbility::Leash,                      "Leashed" },
+	{ SpecialAbility::Tether,                     "Tethered" },
+	{ SpecialAbility::PermarootFlee,              "Permaroot Flee" },
+	{ SpecialAbility::HarmFromClientImmunity,     "Immune to Harm from Client" },
+	{ SpecialAbility::AlwaysFlee,                 "Always Flees" },
+	{ SpecialAbility::FleePercent,                "Flee Percentage" },
+	{ SpecialAbility::AllowBeneficial,            "Allows Beneficial Spells" },
+	{ SpecialAbility::DisableMelee,               "Melee is Disabled" },
+	{ SpecialAbility::NPCChaseDistance,           "Chase Distance" },
+	{ SpecialAbility::AllowedToTank,              "Allowed to Tank" },
+	{ SpecialAbility::ProximityAggro,             "Proximity Aggro" },
+	{ SpecialAbility::AlwaysCallHelp,             "Always Call for Help" },
+	{ SpecialAbility::UseWarriorSkills,           "Use Warrior Skills" },
+	{ SpecialAbility::AlwaysFleeLowCon,           "Always Flee on Low Con" },
+	{ SpecialAbility::NoLoitering,                "No Loitering" },
+	{ SpecialAbility::BadFactionBlockHandin,      "Block Quest Handin on Bad Faction" },
+	{ SpecialAbility::PCDeathblowCorpse,          "PC Deathblow to Corpse" },
+	{ SpecialAbility::CorpseCamper,               "Corpse Camper" },
+	{ SpecialAbility::ReverseSlow,                "Reverse Slow" },
+	{ SpecialAbility::HasteImmunity,              "Immune to Haste" },
+	{ SpecialAbility::DisarmImmunity,             "Immune to Disarm" },
+	{ SpecialAbility::RiposteImmunity,            "Immune to Riposte" }
+};
 
 #endif /*COMMON_EMU_CONSTANTS_H*/

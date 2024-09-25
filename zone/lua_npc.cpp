@@ -126,7 +126,7 @@ void Lua_NPC::SetSaveWaypoint(int wp) {
 
 void Lua_NPC::SetSp2(int sg2) {
 	Lua_Safe_Call_Void();
-	self->SetSp2(sg2);
+	self->SetSpawnGroupId(sg2);
 }
 
 int Lua_NPC::GetWaypointMax() {
@@ -141,7 +141,7 @@ int Lua_NPC::GetGrid() {
 
 uint32 Lua_NPC::GetSp2() {
 	Lua_Safe_Call_Int();
-	return self->GetSp2();
+	return self->GetSpawnGroupId();
 }
 
 int Lua_NPC::GetNPCFactionID() {
@@ -431,9 +431,15 @@ void Lua_NPC::SetSwarmTarget(int target) {
 	self->SetSwarmTarget(target);
 }
 
-void Lua_NPC::ModifyNPCStat(const char *stat, const char *value) {
+void Lua_NPC::ModifyNPCStat(std::string stat, std::string value) {
 	Lua_Safe_Call_Void();
 	self->ModifyNPCStat(stat, value);
+}
+
+float Lua_NPC::GetNPCStat(std::string stat)
+{
+	Lua_Safe_Call_Real();
+	return self->GetNPCStat(stat);
 }
 
 void Lua_NPC::AddAISpell(int priority, int spell_id, int type, int mana_cost, int recast_delay, int resist_adjust) {
@@ -636,6 +642,11 @@ void Lua_NPC::SetClass(int classNum) {
 	self->SetClass(classNum);
 }
 
+void Lua_NPC::ReloadSpells()
+{
+	Lua_Safe_Call_Void();
+	self->ReloadSpells();
+}
 
 luabind::scope lua_register_npc() {
 	return luabind::class_<Lua_NPC, Lua_Mob>("NPC")
@@ -722,7 +733,8 @@ luabind::scope lua_register_npc() {
 		.def("GetSwarmOwner", (int(Lua_NPC::*)(void))&Lua_NPC::GetSwarmOwner)
 		.def("GetSwarmTarget", (int(Lua_NPC::*)(void))&Lua_NPC::GetSwarmTarget)
 		.def("SetSwarmTarget", (void(Lua_NPC::*)(int))&Lua_NPC::SetSwarmTarget)
-		.def("ModifyNPCStat", (void(Lua_NPC::*)(const char*, const char*))&Lua_NPC::ModifyNPCStat)
+		.def("GetNPCStat", (float(Lua_NPC::*)(std::string)) & Lua_NPC::GetNPCStat)
+		.def("ModifyNPCStat", (void(Lua_NPC::*)(std::string, std::string))&Lua_NPC::ModifyNPCStat)
 		.def("AddAISpell", (void(Lua_NPC::*)(int, int, int, int, int, int))&Lua_NPC::AddAISpell)
 		.def("RemoveAISpell", (void(Lua_NPC::*)(int))&Lua_NPC::RemoveAISpell)
 		.def("SetCastRateDetrimental", (void(Lua_NPC::*)(int))&Lua_NPC::SetCastRateDetrimental)
@@ -759,7 +771,8 @@ luabind::scope lua_register_npc() {
 		.def("StopQuestMove", (void(Lua_NPC::*)(bool))& Lua_NPC::StopQuestMove)
 		.def("SetClass", (void(Lua_NPC::*)(int))& Lua_NPC::SetClass)
 		.def("SetMaxDamage", (void(Lua_NPC:: *)(uint32)) &Lua_NPC::SetMaxDamage)
-		.def("SetMinDamage", (void(Lua_NPC:: *)(uint32)) &Lua_NPC::SetMinDamage);
+		.def("SetMinDamage", (void(Lua_NPC:: *)(uint32)) &Lua_NPC::SetMinDamage)
+		.def("ReloadSpells", (void(Lua_NPC::*)(void))& Lua_NPC::ReloadSpells);
 }
 
 #endif

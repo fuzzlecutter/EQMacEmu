@@ -1025,7 +1025,7 @@ void Mob::CalcSpellBonuses(StatBonuses* newbon)
 	if (IsNPC())
 		CastToNPC()->ApplyAISpellEffects(newbon);
 
-	if (GetClass() == BARD) newbon->ManaRegen = 0; // Bards do not get mana regen from spells.
+	if (GetClass() == Class::Bard) newbon->ManaRegen = 0; // Bards do not get mana regen from spells.
 
 	if (newbon->Mana > 500)
 		newbon->Mana = 500;
@@ -1125,7 +1125,7 @@ void Mob::ApplySpellsBonuses(uint16 spell_id, uint8 casterlevel, StatBonuses* ne
 				if (IsNPC())
 				{
 					// Unsure how this mechanic worked. Should there be a roll? Perhaps on the resist check. ie instead of resisting slow, it reverses it?
-					if(GetSpecialAbility(REVERSE_SLOW) && effect_value < 100)
+					if(GetSpecialAbility(SpecialAbility::ReverseSlow) && effect_value < 100)
 					{
 						effect_value += 100;
 					}
@@ -2101,7 +2101,7 @@ void NPC::CalcItemBonuses(StatBonuses *newbon)
 					ApplySpellsBonuses(cur->Worn.Effect, cur->Worn.Level > 0 ? cur->Worn.Level : GetLevel(), newbon, 0, true);
 				}
 
-				if (GetClass() == BARD)
+				if (GetClass() == Class::Bard)
 				{
 					switch (cur->BardType)
 					{

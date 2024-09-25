@@ -70,21 +70,17 @@ void Corpse::SendLootReqErrorPacket(Client* client, uint8 response) {
 }
 
 Corpse* Corpse::LoadCharacterCorpseEntity(uint32 in_dbid, uint32 in_charid, std::string in_charname, const glm::vec4& position, uint32 timestamp, bool rezzed, bool was_at_graveyard){
-	CharacterCorpseEntry ce;
-	if (!database.LoadCharacterCorpseData(in_dbid, ce)) {
-		LogDebug("Unable to create a corpse entity for [{}] [{}] [{}]", in_dbid, in_charid, in_charname);
-		return nullptr;
-	}
+	uint32 item_count = database.GetCharacterCorpseItemCount(in_dbid);
+	auto buffer = new char[sizeof(CharacterCorpseEntry) + (item_count * sizeof(LootItem))];
+	CharacterCorpseEntry *ce = (CharacterCorpseEntry*)buffer;
+	database.LoadCharacterCorpseData(in_dbid, ce);
 
 	LootItems itemlist;
 	LootItem* tmp = nullptr;
-	for (auto &item : ce.items) {
-		auto tmp = new LootItem;
 
-		tmp->equip_slot = item.equip_slot;
-		tmp->item_id = item.item_id;
-		tmp->charges = item.charges;
-		tmp->lootslot = item.lootslot;
+	for (unsigned int i = 0; i < ce->itemcount; i++) {
+		tmp = new LootItem;
+		memcpy(tmp, &ce->items[i], sizeof(LootItem));
 
 		itemlist.push_back(tmp);
 	}
@@ -95,54 +91,57 @@ Corpse* Corpse::LoadCharacterCorpseEntity(uint32 in_dbid, uint32 in_charid, std:
 		in_charid,			   // uint32 in_charid
 		in_charname.c_str(),   // char* in_charname
 		&itemlist,			   // ItemList* in_itemlist
-		ce.copper,		   // uint32 in_copper
-		ce.silver,		   // uint32 in_silver
-		ce.gold,			   // uint32 in_gold
-		ce.plat,			   // uint32 in_plat
+		ce->copper,		   // uint32 in_copper
+		ce->silver,		   // uint32 in_silver
+		ce->gold,			   // uint32 in_gold
+		ce->plat,			   // uint32 in_plat
 		position,
-		ce.size,			   // float in_size
-		ce.gender,		   // uint8 in_gender
-		ce.race,			   // uint16 in_race
-		ce.class_,		   // uint8 in_class
-		ce.deity,			   // uint8 in_deity
-		ce.level,			   // uint8 in_level
-		ce.texture,		   // uint8 in_texture
-		ce.helmtexture,	   // uint8 in_helmtexture
-		ce.exp,			   // uint32 in_rezexp
-		ce.gmexp,			   // uint32 in_gmrezexp
-		ce.killedby,		   // uint8 in_killedby
-		ce.rezzable,		   // bool rezzable
-		ce.rez_time,		   // uint32 rez_time
+		ce->size,			   // float in_size
+		ce->gender,		   // uint8 in_gender
+		ce->race,			   // uint16 in_race
+		ce->class_,		   // uint8 in_class
+		ce->deity,			   // uint8 in_deity
+		ce->level,			   // uint8 in_level
+		ce->texture,		   // uint8 in_texture
+		ce->helmtexture,	   // uint8 in_helmtexture
+		ce->exp,			   // uint32 in_rezexp
+		ce->gmexp,			   // uint32 in_gmrezexp
+		ce->killedby,		   // uint8 in_killedby
+		ce->rezzable,		   // bool rezzable
+		ce->rez_time,		   // uint32 rez_time
 		was_at_graveyard	   // bool wasAtGraveyard
 	);
-	if (ce.locked){
+
+	if (ce->locked){
 		pc->Lock();
 	}
 
 	/* Load Item Tints */
-	pc->item_tint.Head.Color = ce.item_tint.Head.Color;
-	pc->item_tint.Chest.Color = ce.item_tint.Chest.Color;
-	pc->item_tint.Arms.Color = ce.item_tint.Arms.Color;
-	pc->item_tint.Wrist.Color = ce.item_tint.Wrist.Color;
-	pc->item_tint.Hands.Color = ce.item_tint.Hands.Color;
-	pc->item_tint.Legs.Color = ce.item_tint.Legs.Color;
-	pc->item_tint.Feet.Color = ce.item_tint.Feet.Color;
-	pc->item_tint.Primary.Color = ce.item_tint.Primary.Color;
-	pc->item_tint.Secondary.Color = ce.item_tint.Secondary.Color;
+	pc->item_tint.Head.Color = ce->item_tint.Head.Color;
+	pc->item_tint.Chest.Color = ce->item_tint.Chest.Color;
+	pc->item_tint.Arms.Color = ce->item_tint.Arms.Color;
+	pc->item_tint.Wrist.Color = ce->item_tint.Wrist.Color;
+	pc->item_tint.Hands.Color = ce->item_tint.Hands.Color;
+	pc->item_tint.Legs.Color = ce->item_tint.Legs.Color;
+	pc->item_tint.Feet.Color = ce->item_tint.Feet.Color;
+	pc->item_tint.Primary.Color = ce->item_tint.Primary.Color;
+	pc->item_tint.Secondary.Color = ce->item_tint.Secondary.Color;
 
 	/* Load Physical Appearance */
-	pc->haircolor = ce.haircolor;
-	pc->beardcolor = ce.beardcolor;
-	pc->eyecolor1 = ce.eyecolor1;
-	pc->eyecolor2 = ce.eyecolor2;
-	pc->hairstyle = ce.hairstyle;
-	pc->luclinface = ce.face;
-	pc->beard = ce.beard;
+	pc->haircolor = ce->haircolor;
+	pc->beardcolor = ce->beardcolor;
+	pc->eyecolor1 = ce->eyecolor1;
+	pc->eyecolor2 = ce->eyecolor2;
+	pc->hairstyle = ce->hairstyle;
+	pc->luclinface = ce->face;
+	pc->beard = ce->beard;
 	pc->IsRezzed(rezzed);
 	pc->become_npc = false;
 	pc->time_of_death = timestamp;
 
 	pc->UpdateEquipmentLight(); // itemlist populated above..need to determine actual values
+
+	safe_delete_array(ce);
 
 	return pc;
 }
@@ -155,12 +154,12 @@ Corpse::Corpse(NPC* in_npc, LootItems* in_itemlist, uint32 in_npctypeid, const N
 	in_npc->GetGender(),		// uint8		in_gender,
 	in_npc->GetRace(),			// uint16		in_race,
 	in_npc->GetClass(),			// uint8		in_class,
-	BT_Humanoid,				// bodyType	in_bodytype,
+	BodyType::Humanoid,			// uint8		in_bodytype,
 	in_npc->GetDeity(),			// uint8		in_deity,
 	in_npc->GetLevel(),			// uint8		in_level,
 	in_npc->GetNPCTypeID(),		// uint32		in_npctype_id,
 	in_npc->GetSize(),			// float		in_size,
-	0,							// float		in_runspeed,
+	0.0f,						// float		in_runspeed,
 	in_npc->GetPosition(),		// float		in_position
 	in_npc->GetInnateLightType(),	// uint8		in_light,
 	in_npc->GetTexture(),		// uint8		in_texture,
@@ -262,7 +261,7 @@ Corpse::Corpse(Client* client, int32 in_rezexp, uint8 in_killedby) : Mob (
 	client->GetGender(),			  // uint8		in_gender,
 	client->GetRace(),				  // uint16		in_race,
 	client->GetClass(),				  // uint8		in_class,
-	BT_Humanoid,					  // bodyType	in_bodytype,
+	BodyType::Humanoid,				  // uint8		in_bodytype,
 	client->GetDeity(),				  // uint8		in_deity,
 	client->GetLevel(),				  // uint8		in_level,
 	0,								  // uint32		in_npctype_id,
@@ -527,7 +526,7 @@ Corpse::Corpse(uint32 in_dbid, uint32 in_charid, const char* in_charname, LootIt
 	in_gender,				// uint8		in_gender,
 	in_race,				// uint16		in_race,
 	in_class,				// uint8		in_class,
-	BT_Humanoid,			// bodyType	in_bodytype,
+	BodyType::Humanoid,		// unit8		in_bodytype,
 	in_deity,				// uint8		in_deity,
 	in_level,				// uint8		in_level,
 	0,						// uint32		in_npctype_id,
@@ -670,44 +669,48 @@ bool Corpse::Save() {
 		return true;
 	}
 
-	CharacterCorpseEntry ce;
+	uint32 tmp = this->CountItems();
+	uint32 tmpsize = sizeof(CharacterCorpseEntry) + (tmp * sizeof(LootItem));
 
-	ce.size = size;
-	ce.locked = is_locked;
-	ce.copper = copper;
-	ce.silver = silver;
-	ce.gold = gold;
-	ce.plat = platinum;
-	ce.race = race;
-	ce.class_ = class_;
-	ce.gender = gender;
-	ce.deity = deity;
-	ce.level = level;
-	ce.texture = texture;
-	ce.helmtexture = helmtexture;
-	ce.exp = rez_experience;
-	ce.gmexp = gm_rez_experience;
-	ce.killedby = killedby;
-	ce.rezzable = rezzable;
-	ce.rez_time = rez_time;
-	ce.item_tint = item_tint;
-	ce.haircolor = haircolor;
-	ce.beardcolor = beardcolor;
-	ce.eyecolor2 = eyecolor1;
-	ce.hairstyle = hairstyle;
-	ce.face = luclinface;
-	ce.beard = beard;
-	ce.time_of_death = time_of_death;
+	CharacterCorpseEntry *ce = (CharacterCorpseEntry*) new uchar[tmpsize];
+	memset(ce, 0, tmpsize);
+	ce->itemcount = tmp;
+	ce->size = this->size;
+	ce->locked = is_locked;
+	ce->copper = this->copper;
+	ce->silver = this->silver;
+	ce->gold = this->gold;
+	ce->plat = this->platinum;
+	ce->race = this->race;
+	ce->class_ = class_;
+	ce->gender = gender;
+	ce->deity = deity;
+	ce->level = level;
+	ce->texture = this->texture;
+	ce->helmtexture = this->helmtexture;
+	ce->exp = rez_experience;
+	ce->gmexp = gm_rez_experience;
+	ce->killedby = killedby;
+	ce->rezzable = rezzable;
+	ce->rez_time = rez_time;
 
-	for (auto &item : itemlist) {
-		CharacterCorpseItemEntry e;
+	memcpy(&ce->item_tint.Slot, &item_tint.Slot, sizeof(ce->item_tint));
+	ce->item_tint = item_tint;
+	ce->haircolor = haircolor;
+	ce->beardcolor = beardcolor;
+	ce->eyecolor2 = eyecolor1;
+	ce->hairstyle = hairstyle;
+	ce->face = luclinface;
+	ce->beard = beard;
+	ce->time_of_death = time_of_death;
 
-		e.item_id = item->item_id;
-		e.equip_slot = item->equip_slot;
-		e.charges = item->charges;
-		e.lootslot = item->lootslot;
-
-		ce.items.push_back(std::move(e));
+	uint32 x = 0;
+	LootItems::iterator cur, end;
+	cur = itemlist.begin();
+	end = itemlist.end();
+	for (; cur != end; ++cur) {
+		LootItem* item = *cur;
+		memcpy((char*)&ce->items[x++], (char*)item, sizeof(LootItem));
 	}
 
 	/* Create New Corpse*/
@@ -726,6 +729,8 @@ bool Corpse::Save() {
 			database.UpdateCharacterCorpseBackup(corpse_db_id, char_id, corpse_name, zone->GetZoneID(), ce, m_Position, IsRezzed());
 		}
 	}
+
+	safe_delete_array(ce);
 
 	return true;
 }
@@ -782,6 +787,7 @@ void Corpse::AddItem(uint32 itemnum, int8 charges, int16 slot) {
 	item->item_id = itemnum;
 	item->charges = charges;
 	item->equip_slot = slot;
+
 	itemlist.push_back(item);
 
 	UpdateEquipmentLight();
@@ -944,7 +950,7 @@ bool Corpse::Process() {
 			spc->zone_id = zone->graveyard_zoneid();
 			worldserver.SendPacket(pack);
 			safe_delete(pack);
-			Log(Logs::General, Logs::Corpse, "Moved %s player corpse to the designated graveyard in zone %s.", this->GetName(), database.GetZoneName(zone->graveyard_zoneid()));
+			Log(Logs::General, Logs::Corpse, "Moved %s player corpse to the designated graveyard in zone %s.", this->GetName(), ZoneName(zone->graveyard_zoneid()));
 			corpse_db_id = 0;
 		}
 

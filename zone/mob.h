@@ -43,8 +43,6 @@
 
 char* strn0cpy(char* dest, const char* source, uint32 size);
 
-#define MAX_SPECIAL_ATTACK_PARAMS 8
-
 class Client;
 class EQApplicationPacket;
 class Group;
@@ -67,22 +65,22 @@ public:
 						CLIENT_KICKED, PREDISCONNECTED, ZONING, DISCONNECTED, CLIENT_ERROR, CLIENT_CONNECTINGALL };
 	enum eStandingPetOrder { SPO_Follow, SPO_Sit, SPO_Guard };
 
-	struct SpecialAbility {
-		SpecialAbility() {
+	struct MobSpecialAbility {
+		MobSpecialAbility() {
 			level = 0;
 			timer = nullptr;
-			for(int i = 0; i < MAX_SPECIAL_ATTACK_PARAMS; ++i) {
+			for(int i = 0; i < SpecialAbility::MaxParameters; ++i) {
 				params[i] = 0;
 			}
 		}
 
-		~SpecialAbility() {
+		~MobSpecialAbility() {
 			safe_delete(timer);
 		}
 
 		int level;
 		Timer *timer;
-		int params[MAX_SPECIAL_ATTACK_PARAMS];
+		int params[SpecialAbility::MaxParameters];
 	};
 
 	Mob(const char*	in_name,
@@ -92,7 +90,7 @@ public:
 		uint8		in_gender,
 		uint16		in_race,
 		uint8		in_class,
-		bodyType	in_bodytype,
+		uint8		in_bodytype,
 		uint8		in_deity,
 		uint8		in_level,
 		uint32		in_npctype_id,
@@ -166,7 +164,7 @@ public:
 	virtual void DoBackstab(Mob* defender = nullptr) {}
 	int DoMonkSpecialAttack(Mob* other, uint8 skill_used, bool fromWus = false);
 	int DoSpecialAttackDamage(Mob *defender, EQ::skills::SkillType skill, int base, int minDamage = 0, int hate = 0, DoAnimation animation_type = DoAnimation::None);
-	virtual bool AvoidDamage(Mob* attacker, int32 &damage, bool noRiposte = false, bool isRangedAttack = false);
+	virtual bool AvoidDamage(Mob* attacker, int32 &damage, bool isRangedAttack = false);
 	virtual bool AvoidanceCheck(Mob* attacker, EQ::skills::SkillType skillinuse);
 	virtual void TryCriticalHit(Mob *defender, uint16 skill, int32 &damage, int32 minBase = 0, int32 damageBonus = 0);
 	virtual bool TryFinishingBlow(Mob *defender, EQ::skills::SkillType skillinuse, uint32 dmgBonus = 0);
@@ -424,6 +422,7 @@ public:
 		((static_cast<float>(cur_mana) / max_mana) * 100); }
 	virtual int32 CalcMaxMana();
 	uint32 GetNPCTypeID() const { return npctype_id; }
+	void SetNPCTypeID(uint32 npctypeid) { npctype_id = npctypeid; }
 	inline const glm::vec4& GetPosition() const { return m_Position; }
 	inline const float GetX() const { return m_Position.x; }
 	inline const float GetY() const { return m_Position.y; }
@@ -660,12 +659,12 @@ public:
 	int32 GetSpellStat(uint32 spell_id, const char *identifier, uint8 slot = 0);
 
 	void SetAllowBeneficial(bool value) { m_AllowBeneficial = value; }
-	bool GetAllowBeneficial() { if (m_AllowBeneficial || GetSpecialAbility(ALLOW_BENEFICIAL)){return true;} return false; }
+	bool GetAllowBeneficial() { if (m_AllowBeneficial || GetSpecialAbility(SpecialAbility::AllowBeneficial)){return true;} return false; }
 	void SetDisableMelee(bool value) { m_DisableMelee = value; }
-	bool IsMeleeDisabled() { if (m_DisableMelee || GetSpecialAbility(DISABLE_MELEE)){return true;} return false; }
+	bool IsMeleeDisabled() { if (m_DisableMelee || GetSpecialAbility(SpecialAbility::DisableMelee)){return true;} return false; }
 
-	void SetFlurryChance(uint8 value) { SetSpecialAbilityParam(SPECATK_FLURRY, 0, value); }
-	uint8 GetFlurryChance() { return GetSpecialAbilityParam(SPECATK_FLURRY, 0); }
+	void SetFlurryChance(uint8 value) { SetSpecialAbilityParam(SpecialAbility::Flurry, 0, value); }
+	uint8 GetFlurryChance() { return GetSpecialAbilityParam(SpecialAbility::Flurry, 0); }
 
 	static uint32 GetAppearanceValue(EmuAppearance iAppearance);
 	void SendAppearancePacket(uint32 type, uint32 value, bool WholeZone = true, bool iIgnoreSelf = false, Client *specific_target=nullptr);
@@ -724,9 +723,9 @@ public:
 	void SetCorpseID(uint16 in_corpseid) { corpseid = in_corpseid; };
 	inline uint16 GetCorpseID() const { return corpseid; }
 
-	inline const bodyType GetBodyType() const { return bodytype; }
-	inline const bodyType GetOrigBodyType() const { return orig_bodytype; }
-	void SetBodyType(bodyType new_body, bool overwrite_orig);
+	inline const uint8 GetBodyType() const { return bodytype; }
+	inline const uint8 GetOrigBodyType() const { return orig_bodytype; }
+	void SetBodyType(uint8 new_body, bool overwrite_orig);
 
 	uint8 invisible, see_invis;
 	bool invulnerable, invisible_undead, invisible_animals, sneaking, hidden, improved_hidden;
@@ -776,9 +775,12 @@ public:
 	virtual void AI_ShutDown();
 	virtual void AI_Process();
 
-	const char* GetEntityVariable(const char *id);
-	void SetEntityVariable(const char *id, const char *m_var);
-	bool EntityVariableExists(const char *id);
+	bool ClearEntityVariables();
+	bool DeleteEntityVariable(std::string variable_name);
+	std::string GetEntityVariable(std::string variable_name);
+	std::vector<std::string> GetEntityVariables();
+	void SetEntityVariable(std::string variable_name, std::string variable_value);
+	bool EntityVariableExists(std::string variable_name);
 
 	void AI_Event_Engaged(Mob* attacker);
 	void AI_SetLoiterTimer();
@@ -1073,8 +1075,8 @@ protected:
 	uint8 base_gender;
 	uint16 base_race;
 	uint8 class_;
-	bodyType bodytype;
-	bodyType orig_bodytype;
+	uint8 bodytype;
+	uint8 orig_bodytype;
 	uint16 deity;
 	uint8 level;
 	uint8 orig_level;
@@ -1297,7 +1299,7 @@ protected:
 	uint32 combat_hp_regen;
 	uint32 combat_mana_regen;
 
-	SpecialAbility SpecialAbilities[MAX_SPECIAL_ATTACK];
+	MobSpecialAbility SpecialAbilities[SpecialAbility::Max];
 	bool bEnraged;
 	bool iszomm;
 	uint16 MerchantSession;

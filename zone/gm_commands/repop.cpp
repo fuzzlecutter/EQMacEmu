@@ -2,38 +2,29 @@
 
 void command_repop(Client *c, const Seperator *sep)
 {
-	bool force = false;
-	if (sep->arg[1] && strcasecmp(sep->arg[1], "force") == 0) {
-		force = true;
+	bool is_force = false;
+	if (sep->arg[1] && !strcasecmp(sep->arg[1], "force")) {
+		is_force = true;
 	}
 
-	if (!force && c->GetTarget() && c->GetTarget()->IsNPC())
-	{
+	if (!is_force && c->GetTarget() && c->GetTarget()->IsNPC()) {
 		c->GetTarget()->CastToNPC()->ForceRepop();
-		c->Message(Chat::White, "Repopping %s", c->GetTarget()->GetName());
+		c->Message(
+			Chat::White, 
+			fmt::format(
+				"Repopping {}", 
+				c->GetTarget()->GetName()).c_str()
+		);
 	}
-	else
-	{
-		int timearg = 1;
-		if (force) {
-			timearg++;
-
-			LinkedListIterator<Spawn2*> iterator(zone->spawn2_list);
-			iterator.Reset();
-			while (iterator.MoreElements()) {
-				std::string query = StringFormat(
-					"DELETE FROM respawn_times WHERE id = %lu",
-					(unsigned long)iterator.GetData()->GetID()
-				);
-				auto results = database.QueryDatabase(query);
-				iterator.Advance();
-			}
-			c->Message(Chat::White, "Zone depop: Force resetting spawn timers.");
+	else {
+		if (is_force) {
+			zone->ClearSpawnTimers();
+			c->Message(Chat::White, "Zone depopped, forcefully repopping now.");
+		}
+		else {
+			c->Message(Chat::White, "Zone depopped, repopping now.");
 		}
 
-		c->Message(Chat::White, "Zone depoped. Repoping now.");
 		zone->Repop();
-		return;
 	}
 }
-

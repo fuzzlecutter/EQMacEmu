@@ -15,9 +15,10 @@
 */
 
 #include "emu_constants.h"
-#include "languages.h"
 #include "data_verification.h"
-#include "bodytypes.h"
+#include "eqemu_logsys.h"
+#include "eqemu_logsys_log_aliases.h"
+#include "rulesys.h"
 
 int16 EQ::invtype::GetInvTypeSize(int16 inv_type) {
 	static const int16 local_array[] = {
@@ -94,43 +95,43 @@ EQ::bug::CategoryID EQ::bug::CategoryNameToCategoryID(const char* category_name)
 	return catOther;
 }
 
-const std::map<int, std::string>& EQ::constants::GetLanguageMap()
+const std::map<uint8, std::string>& EQ::constants::GetLanguageMap()
 {
-	static const std::map<int, std::string> language_map = {
-		{ LANG_COMMON_TONGUE, "Common Tongue" },
-		{ LANG_BARBARIAN, "Barbarian" },
-		{ LANG_ERUDIAN, "Erudian" },
-		{ LANG_ELVISH, "Elvish" },
-		{ LANG_DARK_ELVISH, "Dark Elvish" },
-		{ LANG_DWARVISH, "Dwarvish" },
-		{ LANG_TROLL, "Troll" },
-		{ LANG_OGRE, "Ogre" },
-		{ LANG_GNOMISH, "Gnomish" },
-		{ LANG_HALFLING, "Halfling" },
-		{ LANG_THIEVES_CANT, "Thieves Cant" },
-		{ LANG_OLD_ERUDIAN, "Old Erudian" },
-		{ LANG_ELDER_ELVISH, "Elder Elvish" },
-		{ LANG_FROGLOK, "Froglok" },
-		{ LANG_GOBLIN, "Goblin" },
-		{ LANG_GNOLL, "Gnoll" },
-		{ LANG_COMBINE_TONGUE, "Combine Tongue" },
-		{ LANG_ELDER_TEIRDAL, "Elder Teirdal" },
-		{ LANG_LIZARDMAN, "Lizardman" },
-		{ LANG_ORCISH, "Orcish" },
-		{ LANG_FAERIE, "Faerie" },
-		{ LANG_DRAGON, "Dragon" },
-		{ LANG_ELDER_DRAGON, "Elder Dragon" },
-		{ LANG_DARK_SPEECH, "Dark Speech" },
-		{ LANG_VAH_SHIR, "Vah Shir" },
-		{ LANG_UNKNOWN1, "Unknown1" },
-		{ LANG_UNKNOWN2, "Unknown2" }
+	static const std::map<uint8, std::string> language_map = {
+			{ Language::CommonTongue,  "Common Tongue" },
+			{ Language::Barbarian,     "Barbarian" },
+			{ Language::Erudian,       "Erudian" },
+			{ Language::Elvish,        "Elvish" },
+			{ Language::DarkElvish,    "Dark Elvish" },
+			{ Language::Dwarvish,      "Dwarvish" },
+			{ Language::Troll,         "Troll" },
+			{ Language::Ogre,          "Ogre" },
+			{ Language::Gnomish,       "Gnomish" },
+			{ Language::Halfling,      "Halfling" },
+			{ Language::ThievesCant,   "Thieves Cant" },
+			{ Language::OldErudian,    "Old Erudian" },
+			{ Language::ElderElvish,   "Elder Elvish" },
+			{ Language::Froglok,       "Froglok" },
+			{ Language::Goblin,        "Goblin" },
+			{ Language::Gnoll,         "Gnoll" },
+			{ Language::CombineTongue, "Combine Tongue" },
+			{ Language::ElderTeirDal,  "Elder Teir'Dal" },
+			{ Language::Lizardman,     "Lizardman" },
+			{ Language::Orcish,        "Orcish" },
+			{ Language::Faerie,        "Faerie" },
+			{ Language::Dragon,        "Dragon" },
+			{ Language::ElderDragon,   "Elder Dragon" },
+			{ Language::DarkSpeech,    "Dark Speech" },
+			{ Language::VahShir,       "Vah Shir" },
+			{ Language::Unknown25,      "Unknown25" },
+			{ Language::Unknown26,      "Unknown26" }
 	};
 	return language_map;
 }
 
-std::string EQ::constants::GetLanguageName(int language_id)
+std::string EQ::constants::GetLanguageName(uint8 language_id)
 {
-	if (EQ::ValueWithin(language_id, LANG_COMMON_TONGUE, LANG_UNKNOWN2)) {
+	if (EQ::ValueWithin(language_id, Language::CommonTongue, Language::Unknown26)) {
 		return EQ::constants::GetLanguageMap().find(language_id)->second;
 	}
 	return std::string();
@@ -155,58 +156,14 @@ std::string EQ::constants::GetFlyModeName(int8 flymode_id)
 	return std::string();
 }
 
-const std::map<bodyType, std::string>& EQ::constants::GetBodyTypeMap()
+std::string SpecialAbility::GetName(int ability_id)
 {
-	static const std::map<bodyType, std::string> bodytype_map = {
-		{ BT_Humanoid, "Humanoid" },
-		{ BT_Lycanthrope, "Lycanthrope" },
-		{ BT_Undead, "Undead" },
-		{ BT_Giant, "Giant" },
-		{ BT_Construct, "Construct" },
-		{ BT_Extraplanar, "Extraplanar" },
-		{ BT_Magical, "Magical" },
-		{ BT_SummonedUndead, "Summoned Undead" },
-		{ BT_BaneGiant, "Raid Giant" },
-		{ BT_Dain, "Raid Coldain" },
-		{ BT_NoTarget, "Untargetable" },
-		{ BT_Vampire, "Vampire" },
-		{ BT_Atenha_Ra, "Aten Ha Ra" },
-		{ BT_Greater_Akheva, "Greater Akheva" },
-		{ BT_Khati_Sha, "Khati Sha" },
-		{ BT_Seru, "Seru" },
-		{ BT_Grieg_Veneficus, "Grieg Veneficus" },
-		{ BT_Draz_Nurakk, "Draz Nurakk" },
-		{ BT_Zek, "Zek" },
-		{ BT_Luggald, "Luggald" },
-		{ BT_Animal, "Animal" },
-		{ BT_Insect, "Insect" },
-		{ BT_Monster, "Monster" },
-		{ BT_Summoned, "Summoned" },
-		{ BT_Plant, "Plant" },
-		{ BT_Dragon, "Dragon" },
-		{ BT_Summoned2, "Summoned 2" },
-		{ BT_Summoned3, "Summoned 3" },
-		{ BT_Dragon2, "Dragon 2" },
-		{ BT_VeliousDragon, "Velious Dragon" },
-		{ BT_Familiar, "Familiar" },
-		{ BT_Dragon3, "Dragon 3" },
-		{ BT_Boxes, "Boxes" },
-		{ BT_Muramite, "Muramite" },
-		{ BT_NoTarget2, "Untargetable 2" },
-		{ BT_SwarmPet, "Swarm Pet" },
-		{ BT_MonsterSummon, "Monster Summon" },
-		{ BT_InvisMan, "Invisible Man" },
-		{ BT_Special, "Special" },
-	};
-	return bodytype_map;
+	return IsValid(ability_id) ? special_ability_names[ability_id] : "UNKNOWN SPECIAL ABILITY";
 }
 
-std::string EQ::constants::GetBodyTypeName(bodyType bodytype_id)
+bool SpecialAbility::IsValid(int ability_id)
 {
-	if (EQ::constants::GetBodyTypeMap().find(bodytype_id) != EQ::constants::GetBodyTypeMap().end()) {
-		return EQ::constants::GetBodyTypeMap().find(bodytype_id)->second;
-	}
-	return std::string();
+	return special_ability_names.find(ability_id) != special_ability_names.end();
 }
 
 const std::map<uint8, std::string>& EQ::constants::GetAccountStatusMap()
